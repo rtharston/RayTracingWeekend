@@ -1,6 +1,22 @@
+import Foundation
+
+func printErr(_ message: String) {
+    guard let messageData = "\(message)\n".data(using: .utf8) else { return }
+
+    FileHandle.standardError.write(messageData)
+}
+
 func imageHelloWorld(width: Int, height: Int) -> RTImage {
+    let printProgress = { (lines: Int) in printErr("Scanlines remaining: \(lines)") }
+
     let pixels = [Pixel](unsafeUninitializedCapacity: width * height) { buffer, initializedCount in
-        for h in 0..<height {
+        printProgress(height)
+
+        for h in (0..<height).reversed() {
+            if h % 10 == 0, h != 0 {
+                printProgress(h)
+            }
+
             let rowIndex = height - h - 1
 
             for w in 0..<width {
@@ -12,6 +28,7 @@ func imageHelloWorld(width: Int, height: Int) -> RTImage {
             }
         }
     }
+    printErr("Done")
     return RTImage(pixels: pixels, width: width, height: height)
 }
 
