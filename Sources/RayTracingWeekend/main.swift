@@ -20,10 +20,11 @@ func imageHelloWorld(width: Int, height: Int) -> RTImage {
             let rowIndex = height - h - 1
 
             for w in 0..<width {
-                let red = UInt8(Double(w) / Double(width - 1) * 255)
-                let green = UInt8(Double(h) / Double(height - 1) * 255)
+                let r = Double(w) / Double(width - 1)
+                let g = Double(h) / Double(height - 1)
+                let b = 0.25
 
-                buffer[w + (rowIndex * width)] = Pixel(red: red, green: green, blue: 63)
+                buffer[w + (rowIndex * width)] = Pixel(color: Color(r: r, g: g, b: b))
                 initializedCount += 1
             }
         }
