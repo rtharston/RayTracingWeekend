@@ -50,3 +50,7 @@ Dependencies/
 .accio/
 
 .vscode
+
+# Added by cargo
+
+target/
