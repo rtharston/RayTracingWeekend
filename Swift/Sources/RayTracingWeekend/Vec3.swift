@@ -68,4 +68,16 @@ extension Vec3 {
     var lengthSquared: Double {
         x * x + y * y + z * z
     }
+
+    // TODO: Add the other utility methods
+}
+
+extension GenericPixel where Size == UInt8 {
+    init(color: Color) {
+        self.init(
+            red:   UInt8(Double(color.r) * 255.99),
+            green: UInt8(Double(color.g) * 255.99),
+            blue:  UInt8(Double(color.b) * 255.99)
+        )
+    }
 }
