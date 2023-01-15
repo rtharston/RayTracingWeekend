@@ -15,9 +15,3 @@ impl Pixel {
         Pixel { r, g, b }
     }
 }
-
-pub struct RTImage {
-    pub pixels: Vec<Pixel>,
-    pub width: usize,
-    pub height: usize,
-}

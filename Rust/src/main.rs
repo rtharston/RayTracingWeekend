@@ -1,6 +1,6 @@
 mod image;
 use image::{Pixel, RTImage};
-mod ppm;
+mod output;
 
 fn image_hello_world() -> RTImage {
     // let image_width = 256;
