@@ -1,8 +1,8 @@
 mod image;
-use image::{Pixel, RTImage};
+use image::{Image, Pixel};
 mod output;
 
-fn image_hello_world() -> RTImage {
+fn image_hello_world() -> Image {
     let image_width = 256;
     let image_height = 256;
     let mut pixels = Vec::<Pixel>::with_capacity(image_width * image_height);
@@ -28,7 +28,7 @@ fn image_hello_world() -> RTImage {
     }
     eprintln!("Done.");
 
-    RTImage {
+    Image {
         pixels: pixels,
         width: image_width,
         height: image_height,

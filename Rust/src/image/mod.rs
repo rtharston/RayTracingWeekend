@@ -1,5 +1,9 @@
 pub mod pixel;
-pub mod rtimage;
 
 pub use pixel::Pixel;
-pub use rtimage::RTImage;
+
+pub struct Image {
+    pub pixels: Vec<Pixel>,
+    pub width: usize,
+    pub height: usize,
+}

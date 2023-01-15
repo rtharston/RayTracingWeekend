@@ -4,7 +4,7 @@ impl crate::Pixel {
     }
 }
 
-impl crate::RTImage {
+impl crate::Image {
     pub fn print_ppm(self) {
         println!("P3");
         println!("{} {}", self.width, self.height);
