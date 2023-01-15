@@ -7,7 +7,13 @@ fn image_hello_world() -> RTImage {
     let image_height = 256;
     let mut pixels = Vec::<Pixel>::with_capacity(image_width * image_height);
 
+    let mut progress_counter = 0;
     for j in (0..image_height).rev() {
+        if progress_counter % 10 == 0 && j != 0 {
+            eprintln!("Scanlines remaining: {}", j);
+        }
+        progress_counter += 1;
+
         for i in 0..image_width {
             let fr = (i as f64) / (image_width - 1) as f64;
             let fg = (j as f64) / (image_height - 1) as f64;
@@ -20,6 +26,7 @@ fn image_hello_world() -> RTImage {
             pixels.push(Pixel::new(r, g, b))
         }
     }
+    eprintln!("Done.");
 
     RTImage {
         pixels: pixels,
