@@ -7,10 +7,10 @@ impl crate::Pixel {
 impl crate::Image {
     pub fn print_ppm(self) {
         println!("P3");
-        println!("{} {}", self.width, self.height);
+        println!("{} {}", self.get_width(), self.get_height());
         println!("255");
 
-        for pixel in self.pixels {
+        for pixel in self.get_pixels() {
             println!("{}", pixel.ppm_string())
         }
     }
