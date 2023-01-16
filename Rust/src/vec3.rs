@@ -28,6 +28,18 @@ impl Vec3 {
 // double operator[](int i) const { return e[i]; }
 // double& operator[](int i) { return e[i]; }
 
+impl Add<Vec3> for Vec3 {
+    type Output = Vec3;
+
+    fn add(self, other: Vec3) -> Vec3 {
+        Vec3 {
+            x: self.x + other.x,
+            y: self.y + other.y,
+            z: self.z + other.z,
+        }
+    }
+}
+
 impl<'a, 'b> Add<&'b Vec3> for &'a Vec3 {
     type Output = Vec3;
 
@@ -76,6 +88,8 @@ impl DivAssign for Vec3 {
     }
 }
 
+// Vec3 * Vec3
+
 impl<'a, 'b> Mul<&'b Vec3> for &'a Vec3 {
     type Output = Vec3;
 
@@ -88,6 +102,8 @@ impl<'a, 'b> Mul<&'b Vec3> for &'a Vec3 {
     }
 }
 
+// Vec3 * f64
+
 impl<'a, 'b> Mul<&'b f64> for &'a Vec3 {
     type Output = Vec3;
 
@@ -96,18 +112,6 @@ impl<'a, 'b> Mul<&'b f64> for &'a Vec3 {
             x: self.x * other,
             y: self.y * other,
             z: self.z * other,
-        }
-    }
-}
-
-impl<'a, 'b> Mul<&'b Vec3> for &'a f64 {
-    type Output = Vec3;
-
-    fn mul(self, other: &'b Vec3) -> Vec3 {
-        Vec3 {
-            x: self * other.x,
-            y: self * other.y,
-            z: self * other.z,
         }
     }
 }
@@ -124,10 +128,48 @@ impl<'a> Mul<f64> for &'a Vec3 {
     }
 }
 
+impl Mul<f64> for Vec3 {
+    type Output = Vec3;
+
+    fn mul(self, other: f64) -> Vec3 {
+        Vec3 {
+            x: self.x * other,
+            y: self.y * other,
+            z: self.z * other,
+        }
+    }
+}
+
+// f64 * Vec3
+
+impl<'a, 'b> Mul<&'b Vec3> for &'a f64 {
+    type Output = Vec3;
+
+    fn mul(self, other: &'b Vec3) -> Vec3 {
+        Vec3 {
+            x: self * other.x,
+            y: self * other.y,
+            z: self * other.z,
+        }
+    }
+}
+
 impl<'a> Mul<&'a Vec3> for f64 {
     type Output = Vec3;
 
     fn mul(self, other: &'a Vec3) -> Vec3 {
+        Vec3 {
+            x: self * other.x,
+            y: self * other.y,
+            z: self * other.z,
+        }
+    }
+}
+
+impl Mul<Vec3> for f64 {
+    type Output = Vec3;
+
+    fn mul(self, other: Vec3) -> Vec3 {
         Vec3 {
             x: self * other.x,
             y: self * other.y,
