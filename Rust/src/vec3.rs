@@ -195,7 +195,7 @@ impl Vec3 {
         }
     }
 
-    pub fn a(&self) -> Vec3 {
+    pub fn unit_vector(&self) -> Vec3 {
         self / self.length()
     }
 }
