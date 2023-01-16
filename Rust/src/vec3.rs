@@ -175,6 +175,16 @@ impl<'a, 'b> Sub<&'b Vec3> for &'a Vec3 {
 }
 
 impl Vec3 {
+    pub fn get_x(&self) -> f64 {
+        self.x
+    }
+    pub fn get_y(&self) -> f64 {
+        self.y
+    }
+    pub fn get_z(&self) -> f64 {
+        self.z
+    }
+
     pub fn length(&self) -> f64 {
         self.length_squared().sqrt()
     }
