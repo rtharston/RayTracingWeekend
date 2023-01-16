@@ -3,6 +3,7 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub};
 pub type Point3 = Vec3;
 pub type Color = Vec3;
 
+#[derive(Debug, Copy, Clone)]
 pub struct Vec3 {
     x: f64,
     y: f64,
@@ -196,5 +197,17 @@ impl Vec3 {
 
     pub fn a(&self) -> Vec3 {
         self / self.length()
+    }
+}
+
+// TODO: Decide on the best place for this
+use crate::image::Pixel;
+impl Pixel {
+    pub fn from_color(color: Color) -> Pixel {
+        Pixel::new(
+            (color.x * 255.99) as u8,
+            (color.y * 255.99) as u8,
+            (color.z * 255.99) as u8,
+        )
     }
 }
