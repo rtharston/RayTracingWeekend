@@ -37,8 +37,10 @@ fn first_ray_traced_gen(width: usize, height: usize, w: usize, h: usize) -> Pixe
     );
 
     let color = |ray: Ray| -> Color {
-        if ray.hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5) {
-            return Color::new(1.0, 0.0, 0.0);
+        if let Some(t) = ray.sphere_normal(&Point3::new(0.0, 0.0, -1.0), 0.5) {
+            let n = (ray.at(t) - Vec3::new(0.0, 0.0, -1.0)).unit_vector();
+            // Return a visualization of the sphere's normal map
+            return 0.5 * Color::new(n.get_x() + 1.0, n.get_y() + 1.0, n.get_z() + 1.0);
         }
 
         let unit_direction = ray.get_direction().unit_vector();
