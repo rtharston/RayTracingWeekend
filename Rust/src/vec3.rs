@@ -11,11 +11,11 @@ pub struct Vec3 {
 }
 
 impl Vec3 {
-    pub fn new(x: f64, y: f64, z: f64) -> Self {
+    pub const fn new(x: f64, y: f64, z: f64) -> Self {
         Vec3 { x, y, z }
     }
 
-    pub fn new_zero() -> Self {
+    pub const fn new_zero() -> Self {
         Vec3 {
             x: 0.0,
             y: 0.0,
