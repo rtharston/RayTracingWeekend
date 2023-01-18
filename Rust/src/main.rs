@@ -13,11 +13,23 @@ fn hello_world_pixel_gen(width: usize, height: usize, w: usize, h: usize) -> Pix
     Pixel::from_color(color)
 }
 
+enum GeneratorOption {
+    HellowWorld,
+}
+
+impl GeneratorOption {
+    fn pixel_generator(self) -> &'static dyn Fn(usize, usize, usize, usize) -> Pixel {
+        match self {
+            Self::HellowWorld => &hello_world_pixel_gen,
+        }
+    }
+}
+
 fn main() {
     // TODO: get output parameters from arguments
     let width = 256;
     let height = 256;
-    let gen = &hello_world_pixel_gen;
+    let option = GeneratorOption::HellowWorld;
 
-    Image::new(width, height, gen).print_ppm();
+    Image::new(width, height, option.pixel_generator()).print_ppm();
 }
