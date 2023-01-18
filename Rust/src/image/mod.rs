@@ -27,7 +27,7 @@ impl Image {
                 pixels.push(pixel_generator(width, height, w, h))
             }
         }
-        eprintln!("Done.");
+        eprintln!("Render complete.");
 
         Image {
             pixels,

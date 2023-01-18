@@ -71,5 +71,8 @@ fn main() {
     const HEIGHT: usize = (WIDTH as f64 / ASPECT_RATIO) as usize;
     let option = GeneratorOption::FirstRay;
 
-    Image::new(WIDTH, HEIGHT, option.pixel_generator()).print_ppm();
+    let image = Image::new(WIDTH, HEIGHT, option.pixel_generator());
+    eprintln!("Printing image.");
+    image.print_ppm();
+    eprintln!("Done.");
 }
