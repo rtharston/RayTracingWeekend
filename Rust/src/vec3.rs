@@ -78,6 +78,14 @@ impl<'a> Div<f64> for &'a Vec3 {
     }
 }
 
+impl Div<f64> for Vec3 {
+    type Output = Vec3;
+
+    fn div(self, other: f64) -> Vec3 {
+        (1.0 / other) * self
+    }
+}
+
 impl DivAssign for Vec3 {
     fn div_assign(&mut self, other: Self) {
         *self = Self {
@@ -208,6 +216,18 @@ impl<'a, 'b> Sub<&'b Vec3> for &'a Vec3 {
     type Output = Vec3;
 
     fn sub(self, other: &'b Vec3) -> Vec3 {
+        Vec3 {
+            x: self.x - other.x,
+            y: self.y - other.y,
+            z: self.z - other.z,
+        }
+    }
+}
+
+impl Sub<Vec3> for Vec3 {
+    type Output = Vec3;
+
+    fn sub(self, other: Vec3) -> Vec3 {
         Vec3 {
             x: self.x - other.x,
             y: self.y - other.y,
