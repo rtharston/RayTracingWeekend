@@ -37,6 +37,10 @@ fn first_ray_traced_gen(width: usize, height: usize, w: usize, h: usize) -> Pixe
     );
 
     let color = |ray: Ray| -> Color {
+        if ray.hit_sphere(&Point3::new(0.0, 0.0, -1.0), 0.5) {
+            return Color::new(1.0, 0.0, 0.0);
+        }
+
         let unit_direction = ray.get_direction().unit_vector();
         let t = 0.5 * (unit_direction.get_y() + 1.0);
         (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
