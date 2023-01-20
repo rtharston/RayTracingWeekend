@@ -28,21 +28,4 @@ impl Ray {
     pub fn at(&self, t: f64) -> Point3 {
         &self.origin + &(&self.direction * t)
     }
-
-    pub fn sphere_normal(&self, center: &Point3, radius: f64) -> Option<f64> {
-        let oc = &self.origin - center;
-        let a = self.direction.length_squared();
-        let half_b = Vec3::dot(&oc, &self.direction);
-        let c = oc.length_squared() - radius * radius;
-        let discriminant = half_b * half_b - a * c;
-        if discriminant < 0.0 {
-            None
-        } else {
-            Some((-half_b - discriminant.sqrt()) / a)
-        }
-    }
-
-    pub fn hit_sphere(&self, center: &Point3, radius: f64) -> bool {
-        self.sphere_normal(center, radius).is_some()
-    }
 }

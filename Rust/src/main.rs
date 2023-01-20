@@ -8,6 +8,8 @@ mod vec3;
 use vec3::{Color, Point3, Vec3};
 mod ray;
 use ray::Ray;
+mod hittable;
+use hittable::{Hittable, Sphere};
 
 // I want this to be in main (and selectable) and passed in to the generator
 const ASPECT_RATIO: f64 = 16.0 / 9.0;
@@ -32,6 +34,8 @@ fn first_ray_traced_gen(width: usize, height: usize, w: usize, h: usize) -> Pixe
     let lower_left_corner: Vec3 =
         ORIGIN - HORIZONTAL / 2.0 - VERTICAL / 2.0 - Vec3::new(0.0, 0.0, FOCAL_LENGTH);
 
+    const SPHERE: Sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5);
+
     let u = (w as f64) / (width - 1) as f64;
     let v = (h as f64) / (height - 1) as f64;
     let ray = Ray::new(
@@ -40,8 +44,8 @@ fn first_ray_traced_gen(width: usize, height: usize, w: usize, h: usize) -> Pixe
     );
 
     let color = |ray: Ray| -> Color {
-        if let Some(t) = ray.sphere_normal(&Point3::new(0.0, 0.0, -1.0), 0.5) {
-            let n = (ray.at(t) - Vec3::new(0.0, 0.0, -1.0)).unit_vector();
+        if let Some(hit) = SPHERE.hit(&ray, 0.0, f64::INFINITY) {
+            let n = hit.get_normal();
             // Return a visualization of the sphere's normal map
             return 0.5 * Color::new(n.get_x() + 1.0, n.get_y() + 1.0, n.get_z() + 1.0);
         }
