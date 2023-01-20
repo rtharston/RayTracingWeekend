@@ -1,3 +1,6 @@
+use std::fs::File;
+use std::io::Write;
+
 mod image;
 use image::{Image, Pixel};
 mod output;
@@ -65,14 +68,68 @@ impl GeneratorOption {
     }
 }
 
+enum OutputOption {
+    File(File),
+    STDOUT,
+}
+
+impl Image {
+    fn save(self, output_option: OutputOption) {
+        eprintln!("Saving image.");
+        let image_str = self.ppm_string();
+        match output_option {
+            OutputOption::File(mut file) => match file.write_all(image_str.as_bytes()) {
+                Err(error) => eprintln!("Failed to save image: {}", error),
+                Ok(_) => eprintln!("Done."),
+            },
+            OutputOption::STDOUT => print!("{}", image_str),
+        };
+    }
+}
+
+fn print_usage() {
+    println!(
+        "usage:
+ray_tracing_weekend <path>|--stdout
+    Generate a ray traced image
+    <path>      path to the output file
+    --stdout    print image data to stdout
+    "
+    );
+}
+
 fn main() {
+    let args: Vec<String> = std::env::args().collect();
+
+    let output_option = match args.len() {
+        2 => {
+            let cmd = &args[1];
+            match &cmd[..] {
+                "--stdout" => OutputOption::STDOUT,
+                // TODO: Check if valid path
+                _ => match File::create(cmd) {
+                    Ok(file) => OutputOption::File(file),
+                    Err(error) => {
+                        eprintln!("couldn't create file '{}'", cmd);
+                        eprintln!("ERROR: {}\n", error);
+
+                        print_usage();
+                        std::process::exit(-2)
+                    }
+                },
+            }
+        }
+        _ => {
+            print_usage();
+            std::process::exit(-1);
+        }
+    };
+
     // TODO: get output parameters from arguments
+    // const WIDTH: usize = 2560;
     const WIDTH: usize = 400;
     const HEIGHT: usize = (WIDTH as f64 / ASPECT_RATIO) as usize;
     let option = GeneratorOption::FirstRay;
 
-    let image = Image::new(WIDTH, HEIGHT, option.pixel_generator());
-    eprintln!("Printing image.");
-    image.print_ppm();
-    eprintln!("Done.");
+    Image::new(WIDTH, HEIGHT, option.pixel_generator()).save(output_option);
 }
