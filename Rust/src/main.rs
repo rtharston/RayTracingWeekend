@@ -34,7 +34,11 @@ fn first_ray_traced_gen(width: usize, height: usize, w: usize, h: usize) -> Pixe
     let lower_left_corner: Vec3 =
         ORIGIN - HORIZONTAL / 2.0 - VERTICAL / 2.0 - Vec3::new(0.0, 0.0, FOCAL_LENGTH);
 
-    const SPHERE: Sphere = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5);
+    // TODO: refactor the generator to only create the hittable objects once.
+    let world: Vec<Sphere> = vec![
+        Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5),
+        Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0),
+    ];
 
     let u = (w as f64) / (width - 1) as f64;
     let v = (h as f64) / (height - 1) as f64;
@@ -44,7 +48,7 @@ fn first_ray_traced_gen(width: usize, height: usize, w: usize, h: usize) -> Pixe
     );
 
     let color = |ray: Ray| -> Color {
-        if let Some(hit) = SPHERE.hit(&ray, 0.0, f64::INFINITY) {
+        if let Some(hit) = world.hit(&ray, 0.0, f64::INFINITY) {
             let n = hit.get_normal();
             // Return a visualization of the sphere's normal map
             return 0.5 * Color::new(n.get_x() + 1.0, n.get_y() + 1.0, n.get_z() + 1.0);
