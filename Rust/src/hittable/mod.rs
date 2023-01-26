@@ -51,6 +51,9 @@ pub trait Hittable {
     // fn hit(&self, ray: &Ray) -> Option<HitRecord>;
 }
 
+// Question: The original C++ code made a custom list that had an internal vector of shared pointers
+// so the hittable objects could be shared around; do I need to handle RC<Hittable>?
+
 impl<H: Hittable> Hittable for std::vec::Vec<H> {
     fn hit(&self, ray: &Ray, t_min: f64, t_max: f64) -> Option<HitRecord> {
         let mut temp_rec: Option<HitRecord> = None;
