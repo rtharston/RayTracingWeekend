@@ -61,10 +61,11 @@ impl Hittable for Sphere {
         }
 
         let p = ray.at(root);
-        Some(HitRecord {
-            p: p,
-            normal: (&p - &self.center) / self.radius,
-            t: root,
-        })
+        Some(HitRecord::new(
+            p,
+            (&p - &self.center) / self.radius,
+            root,
+            ray.get_direction(),
+        ))
     }
 }
