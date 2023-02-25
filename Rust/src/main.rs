@@ -14,15 +14,6 @@ use hittable::{Hittable, Sphere};
 // I want this to be in main (and selectable) and passed in to the generator
 const ASPECT_RATIO: f64 = 16.0 / 9.0;
 
-fn hello_world_pixel_gen(width: usize, height: usize, w: usize, h: usize) -> Pixel {
-    let r = (w as f64) / (width - 1) as f64;
-    let g = (h as f64) / (height - 1) as f64;
-    let b = 0.25;
-
-    let color = Color::new(r, g, b);
-    Pixel::from_color(color)
-}
-
 fn first_ray_traced_gen(width: usize, height: usize, w: usize, h: usize) -> Pixel {
     const VIEWPORT_HEIGHT: f64 = 2.0;
     const VIEWPORT_WIDTH: f64 = ASPECT_RATIO * VIEWPORT_HEIGHT;
@@ -60,20 +51,6 @@ fn first_ray_traced_gen(width: usize, height: usize, w: usize, h: usize) -> Pixe
     };
 
     Pixel::from_color(color(ray))
-}
-
-enum GeneratorOption {
-    HellowWorld,
-    FirstRay,
-}
-
-impl GeneratorOption {
-    fn pixel_generator(self) -> &'static dyn Fn(usize, usize, usize, usize) -> Pixel {
-        match self {
-            Self::HellowWorld => &hello_world_pixel_gen,
-            Self::FirstRay => &first_ray_traced_gen,
-        }
-    }
 }
 
 enum OutputOption {
@@ -137,7 +114,6 @@ fn main() {
     // const WIDTH: usize = 2560;
     const WIDTH: usize = 400;
     const HEIGHT: usize = (WIDTH as f64 / ASPECT_RATIO) as usize;
-    let option = GeneratorOption::FirstRay;
 
-    Image::new(WIDTH, HEIGHT, option.pixel_generator()).save(output_option);
+    Image::new(WIDTH, HEIGHT, &first_ray_traced_gen).save(output_option);
 }
