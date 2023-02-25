@@ -15,6 +15,8 @@ use hittable::{Hittable, Sphere};
 const ASPECT_RATIO: f64 = 16.0 / 9.0;
 
 fn ray_traced_image(width: usize, height: usize) -> Image {
+    eprintln!("Width: {}", width);
+    eprintln!("Height: {}", height);
     const VIEWPORT_HEIGHT: f64 = 2.0;
     const VIEWPORT_WIDTH: f64 = ASPECT_RATIO * VIEWPORT_HEIGHT;
     const FOCAL_LENGTH: f64 = 1.0;
@@ -35,7 +37,7 @@ fn ray_traced_image(width: usize, height: usize) -> Image {
     let mut progress_counter = 0;
     for h in (0..height).rev() {
         if progress_counter % 10 == 0 && h != 0 {
-            eprintln!("Scanlines remaining: {}", h);
+            eprintln!("Scanlines remaining: {}", h + 1);
         }
         progress_counter += 1;
 
