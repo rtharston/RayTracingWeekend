@@ -11,21 +11,9 @@ use ray::Ray;
 mod hittable;
 use hittable::{Hittable, Sphere};
 
-// I want this to be in main (and selectable) and passed in to the generator
-const ASPECT_RATIO: f64 = 16.0 / 9.0;
-
 fn ray_traced_image(width: usize, height: usize) -> Image {
     eprintln!("Width: {}", width);
     eprintln!("Height: {}", height);
-    const VIEWPORT_HEIGHT: f64 = 2.0;
-    const VIEWPORT_WIDTH: f64 = ASPECT_RATIO * VIEWPORT_HEIGHT;
-    const FOCAL_LENGTH: f64 = 1.0;
-    const ORIGIN: Point3 = Point3::new_zero();
-    const HORIZONTAL: Vec3 = Vec3::new(VIEWPORT_WIDTH, 0.0, 0.0);
-    const VERTICAL: Vec3 = Vec3::new(0.0, VIEWPORT_HEIGHT, 0.0);
-    // I'd like this to be const, but that doesn't work with my sub and div impls
-    let lower_left_corner: Vec3 =
-        ORIGIN - HORIZONTAL / 2.0 - VERTICAL / 2.0 - Vec3::new(0.0, 0.0, FOCAL_LENGTH);
 
     let world: Vec<Sphere> = vec![
         Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5),
