@@ -14,6 +14,8 @@ set ( CMAKE_CXX_EXTENSIONS        OFF )
 # Source
 
 set ( SOURCE_ONE_WEEKEND
+  src/InOneWeekend/vec3.h
+
   src/InOneWeekend/main.cpp
 )
 
