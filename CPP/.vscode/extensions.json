@@ -1,5 +1,6 @@
 {
     "recommendations": [
-        "phytolizer.header-guard-generator"
+        "phytolizer.header-guard-generator",
+        "ms-vscode.cpptools-extension-pack",
     ]
 }
