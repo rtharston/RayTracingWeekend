@@ -1,0 +1,9 @@
+{
+    "header-guard-generator.stopDirs": [
+        "src",
+        "InOneWeekend",
+        "TheNextWeek",
+        "TheRestOfYourLife",
+        "include"
+    ]
+}
