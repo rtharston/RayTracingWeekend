@@ -5,15 +5,15 @@
 
 class ray {
   public:
-    ray() {}
+    constexpr ray() {}
 
-    ray(const point3& origin, const vec3& direction) : orig(origin), dir(direction) {}
+    constexpr ray(const point3& origin, const vec3& direction) : orig{origin}, dir{direction} {}
 
     // TODO: consider making these return const references
-    point3 origin() const noexcept { return orig; }
-    vec3 direction() const noexcept { return dir; }
+    constexpr point3 origin() const noexcept { return orig; }
+    constexpr vec3 direction() const noexcept { return dir; }
     
-    point3 at(double t) const noexcept {
+    constexpr point3 at(double t) const noexcept {
       return orig + t * dir;
     }
 
