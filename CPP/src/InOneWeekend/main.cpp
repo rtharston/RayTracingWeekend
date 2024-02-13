@@ -4,11 +4,11 @@
 
 #include <iostream>
 
-constexpr color red{1.0, 0.0, 0.0};
+// constexpr color red{1.0, 0.0, 0.0};
 constexpr color white{1.0, 1.0, 1.0};
 constexpr color sky_blue{0.5, 0.7, 1.0};
 
-bool hit_sphere(const point3& center, double radius, const ray& r) {
+double hit_sphere(const point3& center, double radius, const ray& r) {
   // See section 5.1 for explanation of this math
   // In short, this checks if the ray hits the sphere by checking if there is
   // a point on the ray that satisfies the formula for the surface of a sphere.
@@ -18,14 +18,21 @@ bool hit_sphere(const point3& center, double radius, const ray& r) {
   const double b = 2.0 * dot(oc, r.direction());
   const double c = dot(oc, oc) - radius*radius;
   const double discriminant = b*b - 4*a*c;
-  return (discriminant >= 0);
+  if (discriminant < 0) {
+    return -1;
+  } else {
+    return (-b - sqrt(discriminant)) / (2.0 * a);
+  }
 }
 
 color ray_color(const ray& r) {
   constexpr point3 centerSphere(0,0,-1);
 
-  if (hit_sphere(centerSphere, 0.5, r))
-    return red;
+  const double t = hit_sphere(centerSphere, 0.5, r);
+  if (t > 0.0) {
+    const vec3 N = unit_vector(r.at(t) - centerSphere);
+    return 0.5 * color(N.x() + 1, N.y() + 1, N.z() + 1);
+  }
 
   const vec3 unit_direction = unit_vector(r.direction());
   const double a = 0.5 * (unit_direction.y() + 1.0);
