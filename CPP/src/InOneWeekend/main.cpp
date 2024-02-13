@@ -9,19 +9,19 @@ constexpr color white{1.0, 1.0, 1.0};
 constexpr color sky_blue{0.5, 0.7, 1.0};
 
 double hit_sphere(const point3& center, double radius, const ray& r) {
-  // See section 5.1 for explanation of this math
+  // See sections 5.1 and 6.2 for explanation of this math
   // In short, this checks if the ray hits the sphere by checking if there is
   // a point on the ray that satisfies the formula for the surface of a sphere.
   // The original formula is x^2+y^2+z^2=r^2, but it has been rearranged below.
   const vec3 oc = r.origin() - center;
-  const double a = dot(r.direction(), r.direction());
-  const double b = 2.0 * dot(oc, r.direction());
-  const double c = dot(oc, oc) - radius*radius;
-  const double discriminant = b*b - 4*a*c;
+  const double a = r.direction().length_squared();
+  const double half_b = dot(oc, r.direction());
+  const double c = oc.length_squared() - radius*radius;
+  const double discriminant = half_b*half_b - a*c;
   if (discriminant < 0) {
     return -1;
   } else {
-    return (-b - sqrt(discriminant)) / (2.0 * a);
+    return (-half_b - sqrt(discriminant)) / a;
   }
 }
 
