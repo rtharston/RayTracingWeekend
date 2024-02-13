@@ -1,36 +1,24 @@
 #include "color.h"
 #include "ray.h"
+#include "sphere.h"
 #include "vec3.h"
 
 #include <iostream>
+#include <limits>
 
 // constexpr color red{1.0, 0.0, 0.0};
 constexpr color white{1.0, 1.0, 1.0};
 constexpr color sky_blue{0.5, 0.7, 1.0};
 
-double hit_sphere(const point3& center, double radius, const ray& r) {
-  // See sections 5.1 and 6.2 for explanation of this math
-  // In short, this checks if the ray hits the sphere by checking if there is
-  // a point on the ray that satisfies the formula for the surface of a sphere.
-  // The original formula is x^2+y^2+z^2=r^2, but it has been rearranged below.
-  const vec3 oc = r.origin() - center;
-  const double a = r.direction().length_squared();
-  const double half_b = dot(oc, r.direction());
-  const double c = oc.length_squared() - radius*radius;
-  const double discriminant = half_b*half_b - a*c;
-  if (discriminant < 0) {
-    return -1;
-  } else {
-    return (-half_b - sqrt(discriminant)) / a;
-  }
-}
-
 color ray_color(const ray& r) {
-  constexpr point3 centerSphere(0,0,-1);
+  constexpr point3 centerPoint(0,0,-1);
+  constexpr sphere centerSphere(centerPoint, 0.5);
 
-  const double t = hit_sphere(centerSphere, 0.5, r);
-  if (t > 0.0) {
-    const vec3 N = unit_vector(r.at(t) - centerSphere);
+  hit_record record;
+
+  const double t = centerSphere.hit(r, 0, std::numeric_limits<double>::infinity(), record);
+  if (t) {
+    const vec3 N = record.normal;
     return 0.5 * color(N.x() + 1, N.y() + 1, N.z() + 1);
   }
 
