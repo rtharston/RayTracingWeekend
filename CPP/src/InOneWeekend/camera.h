@@ -50,9 +50,7 @@ class camera {
             pixel_color += ray_color(r, max_depth, world);
           }
 
-          // Dividing by samples_per_pixel gives a slightly different result
-          const double scale = 1.0 / samples_per_pixel;
-          pixel_color *= scale;
+          pixel_color /= samples_per_pixel;
 
           linear_to_gamma(pixel_color);
 
