@@ -146,4 +146,12 @@ inline vec3 reflect(const vec3& v, const vec3& n) noexcept {
   return v - 2*dot(v,n)*n;
 }
 
+inline vec3 refract(const vec3& uv, const vec3& n, const double etai_over_etat) {
+  // See section 11.2 for an explanation of the math
+  const double cos_theta = fmin(dot(-uv, n), 1.0);
+  const vec3 r_out_perp = etai_over_etat * (uv + cos_theta*n);
+  const vec3 r_out_parallel = -sqrt(fabs(1.0 - r_out_perp.length_squared())) * n;
+  return r_out_perp + r_out_parallel;
+}
+
 #endif // VEC3_H

@@ -52,6 +52,27 @@ private:
   const double fuzz;
 };
 
+// Transparent material
+class dielectric : public material {
+public:
+  constexpr dielectric(const double index_of_refraction) : ir(index_of_refraction) {}
+
+  bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered) const noexcept override {
+    // TODO: add chance to reflect instead of refract
+    attenuation = white;
+    const double refraction_ratio = rec.front_face ? (1.0/ir) : ir;
+
+    const vec3 unit_direction = unit_vector(r_in.direction());
+    const vec3 refracted = refract(unit_direction, rec.normal, refraction_ratio);
+
+    scattered = ray(rec.p, refracted);
+    return true;
+  }
+
+private:
+  const double ir; // Index of refraction
+};
+
 // Simple diffused material with rays bounding in completely random directions
 class random_diffusion : public material {
 public:
