@@ -71,12 +71,22 @@ class camera {
         std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
         for (int i = 0; i < image_width; ++i) {
           color pixel_color(0,0,0);
-          for (int sample = 0; sample < samples_per_pixel; ++sample) {
-            const ray r = get_ray(i, j);
-            pixel_color += ray_color(r, max_depth, world);
-          }
+          // Only get randomized rays if we are sampling more than once per pixel
+          if (samples_per_pixel > 1) {
+            for (int sample = 0; sample < samples_per_pixel; ++sample) {
+              const ray r = get_ray(i, j);
+              pixel_color += ray_color(r, max_depth, world);
+            }
 
-          pixel_color /= samples_per_pixel;
+            pixel_color /= samples_per_pixel;
+          } else {
+            const point3 pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
+            // TODO: maybe I should make a ray constructor that takes a point3 as the destination, and calculates the direction.
+            const vec3 ray_direction = pixel_center - center;
+            const ray r{center, ray_direction};
+            
+            pixel_color = ray_color(r, max_depth, world);
+          }
 
           linear_to_gamma(pixel_color);
 
