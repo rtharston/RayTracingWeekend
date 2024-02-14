@@ -4,6 +4,8 @@
 #include <cmath>
 #include <iostream>
 
+#include "interval.h"
+
 using std::sqrt;
 
 class vec3 {
@@ -37,6 +39,12 @@ class vec3 {
 
     constexpr vec3& operator/=(double t) noexcept {
       return *this *= 1/t;
+    }
+
+    constexpr void clamp(const interval t) noexcept {
+      t.clamp(e[0]);
+      t.clamp(e[1]);
+      t.clamp(e[2]);
     }
 
     constexpr double length() const noexcept {

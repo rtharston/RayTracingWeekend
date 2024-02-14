@@ -10,10 +10,11 @@
 
 class camera {
   public:
-    constexpr camera(const double _aspect_ratio, const int _image_width) noexcept 
+    constexpr camera(const double _aspect_ratio, const int _image_width, const int _samples_per_pixel) noexcept 
     : aspect_ratio(_aspect_ratio),
       image_width(_image_width),
       image_height(static_cast<int>(image_width / aspect_ratio)),
+      samples_per_pixel(_samples_per_pixel),
       center(0, 0, 0)
     {
       // Ensure that image height is at least 1.
@@ -42,13 +43,19 @@ class camera {
       for (int j = 0; j < image_height; ++j) {
         std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
         for (int i = 0; i < image_width; ++i) {
-          const point3 pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
-          // TODO: maybe I should make a ray constructor that takes a point3 as the destination, and calculates the direction.
-          const vec3 ray_direction = pixel_center - center;
-          const ray r{center, ray_direction};
-          
-          const color pixel_color = ray_color(r, world);
+          color pixel_color(0,0,0);
+          for (int sample = 0; sample < samples_per_pixel; ++sample) {
+            const ray r = get_ray(i, j);
+            pixel_color += ray_color(r, world);
+          }
 
+          // Dividing by samples_per_pixel gives a slightly different result
+          const double scale = 1.0 / samples_per_pixel;
+          pixel_color *= scale;
+
+          static const interval intensity(0.000, 0.999);
+          pixel_color.clamp(intensity);
+          
           write_color(std::cout, pixel_color);
         }
       }
@@ -70,9 +77,29 @@ class camera {
     return (1.0 - a) * white + a * sky_blue;
   }
 
+  ray get_ray(const int i, const int j) const noexcept {
+    // Get a randomly sampled camera ray for the pixel at location i,j.
+
+    const vec3 pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
+    const vec3 pixel_sample = pixel_center + pixel_sample_square();
+
+    const point3 ray_origin = center;
+    const vec3 ray_direction = pixel_sample - ray_origin;
+
+    return ray(ray_origin, ray_direction);
+  }
+
+  vec3 pixel_sample_square() const noexcept {
+    // Returns a random point in the square surrounding a pixel at the origin.
+    const double px = -0.5 + random_double();
+    const double py = -0.5 + random_double();
+    return (px * pixel_delta_u) + (py * pixel_delta_v);
+  }
+
   const double aspect_ratio;
   const int image_width;
   const int image_height;
+  const int samples_per_pixel;
   const point3 center;   // Camera center
   point3 pixel00_loc;    // Location of pixel 0, 0
   vec3   pixel_delta_u;  // Offset to pixel to the right
