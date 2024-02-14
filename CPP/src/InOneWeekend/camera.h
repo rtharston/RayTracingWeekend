@@ -73,7 +73,8 @@ class camera {
       return color(0,0,0);
     
     hit_record record;
-    if (world.hit(r, interval(0, infinity), record)) {
+    // look for hits that aren't super close to the surface (which are likely due to floating point rounding errors)
+    if (world.hit(r, interval(0.001, infinity), record)) {
       // Simple diffused material
       const vec3 direction = random_on_hemisphere(record.normal);
       // Get the color of the ray that bounced from this hit point
