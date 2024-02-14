@@ -1,11 +1,10 @@
+#include "rtweekend.h"
+
 #include "color.h"
 #include "hittable_list.h"
-#include "ray.h"
 #include "sphere.h"
-#include "vec3.h"
 
 #include <iostream>
-#include <limits>
 
 // constexpr color red{1.0, 0.0, 0.0};
 constexpr color white{1.0, 1.0, 1.0};
@@ -13,7 +12,7 @@ constexpr color sky_blue{0.5, 0.7, 1.0};
 
 color ray_color(const ray& r, const hittable& world) {
   hit_record record;
-  if (world.hit(r, 0, std::numeric_limits<double>::infinity(), record)) {
+  if (world.hit(r, 0, infinity, record)) {
     return 0.5 * (record.normal + color(1,1,1));
   }
 
