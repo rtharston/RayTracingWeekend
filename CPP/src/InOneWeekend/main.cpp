@@ -14,8 +14,7 @@ constexpr color sky_blue{0.5, 0.7, 1.0};
 color ray_color(const ray& r, const hittable& world) {
   hit_record record;
   if (world.hit(r, 0, std::numeric_limits<double>::infinity(), record)) {
-    const vec3 N = record.normal;
-    return 0.5 * color(N.x() + 1, N.y() + 1, N.z() + 1);
+    return 0.5 * (record.normal + color(1,1,1));
   }
 
   const vec3 unit_direction = unit_vector(r.direction());
