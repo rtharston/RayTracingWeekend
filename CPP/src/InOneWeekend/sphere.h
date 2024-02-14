@@ -6,7 +6,11 @@
 
 class sphere : public hittable {
 public:
-  constexpr sphere(const point3 _center, const double _radius) noexcept : center{_center}, radius{_radius} {}
+  sphere(const point3 _center, const double _radius, const std::shared_ptr<material> _mat) noexcept
+  : center{_center},
+    radius{_radius},
+    mat{_mat}
+  {}
 
   bool hit(const ray& r, const interval ray_t, hit_record& rec) const noexcept override {
     // See sections 5.1 and 6.2 for explanation of this math
@@ -35,6 +39,7 @@ public:
     rec.p = r.at(rec.t);
     vec3 outward_normal = (rec.p - center) / radius;
     rec.set_face_normal(r, outward_normal);
+    rec.mat = mat;
 
     return true;
   }
@@ -42,6 +47,7 @@ public:
 private:
   const point3 center;
   const double radius;
+  const std::shared_ptr<material> mat;
 };
 
 #endif // SPHERE_H

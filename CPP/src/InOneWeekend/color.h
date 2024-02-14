@@ -8,6 +8,8 @@
 using color = vec3;
 
 constexpr color red{1.0, 0.0, 0.0};
+constexpr color green{0.0, 1.0, 0.0};
+constexpr color blue{0.0, 0.0, 1.0};
 constexpr color white{1.0, 1.0, 1.0};
 constexpr color sky_blue{0.5, 0.7, 1.0};
 
