@@ -10,11 +10,12 @@
 
 class camera {
   public:
-    constexpr camera(const double _aspect_ratio, const int _image_width, const int _samples_per_pixel) noexcept 
+    constexpr camera(const double _aspect_ratio, const int _image_width, const int _samples_per_pixel, const int _max_depth) noexcept 
     : aspect_ratio(_aspect_ratio),
       image_width(_image_width),
       image_height(static_cast<int>(image_width / aspect_ratio)),
       samples_per_pixel(_samples_per_pixel),
+      max_depth(_max_depth),
       center(0, 0, 0)
     {
       // Ensure that image height is at least 1.
@@ -46,7 +47,7 @@ class camera {
           color pixel_color(0,0,0);
           for (int sample = 0; sample < samples_per_pixel; ++sample) {
             const ray r = get_ray(i, j);
-            pixel_color += ray_color(r, world);
+            pixel_color += ray_color(r, max_depth, world);
           }
 
           // Dividing by samples_per_pixel gives a slightly different result
@@ -66,14 +67,18 @@ class camera {
 
   private:
     
-  color ray_color(const ray& r, const hittable& world) const noexcept {
+  color ray_color(const ray& r, const int depth, const hittable& world) const noexcept {
+    // If we have exceeded the ray bounce limit, no more light is gathered.
+    if (depth <= 0)
+      return color(0,0,0);
+    
     hit_record record;
     if (world.hit(r, interval(0, infinity), record)) {
       // Simple diffused material
       const vec3 direction = random_on_hemisphere(record.normal);
       // Get the color of the ray that bounced from this hit point
       // Return half the color intensity (to get a gray color)
-      return 0.5 * ray_color(ray(record.p, direction), world);
+      return 0.5 * ray_color(ray(record.p, direction), depth-1, world);
     }
 
     const vec3 unit_direction = unit_vector(r.direction());
@@ -104,6 +109,7 @@ class camera {
   const int image_width;
   const int image_height;
   const int samples_per_pixel;
+  const int max_depth;   // Maximum number of ray bounces into scene
   const point3 center;   // Camera center
   point3 pixel00_loc;    // Location of pixel 0, 0
   vec3   pixel_delta_u;  // Offset to pixel to the right

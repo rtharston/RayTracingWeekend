@@ -9,7 +9,7 @@ int main() {
   world.add(make_shared<sphere>(point3(0,0,-1), 0.5));
   world.add(make_shared<sphere>(point3(0,-100.5,-1), 100));
 
-  constexpr camera cam(16.0 / 9.0, 400, 100);
+  constexpr camera cam(16.0 / 9.0, 400, 100, 50);
   cam.render(world);
 
   return 0;
