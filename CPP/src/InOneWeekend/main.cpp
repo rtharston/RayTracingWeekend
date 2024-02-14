@@ -1,4 +1,5 @@
 #include "color.h"
+#include "hittable_list.h"
 #include "ray.h"
 #include "sphere.h"
 #include "vec3.h"
@@ -10,14 +11,9 @@
 constexpr color white{1.0, 1.0, 1.0};
 constexpr color sky_blue{0.5, 0.7, 1.0};
 
-color ray_color(const ray& r) {
-  constexpr point3 centerPoint(0,0,-1);
-  constexpr sphere centerSphere(centerPoint, 0.5);
-
+color ray_color(const ray& r, const hittable& world) {
   hit_record record;
-
-  const double t = centerSphere.hit(r, 0, std::numeric_limits<double>::infinity(), record);
-  if (t) {
+  if (world.hit(r, 0, std::numeric_limits<double>::infinity(), record)) {
     const vec3 N = record.normal;
     return 0.5 * color(N.x() + 1, N.y() + 1, N.z() + 1);
   }
@@ -37,6 +33,12 @@ int main() {
   // Calculate the image height, and ensure that it's at least 1.
   constexpr int image_height = static_cast<int>(image_width / aspect_ratio);
   static_assert(image_height > 1, "image height is less than 1");
+
+  // World
+
+  hittable_list world;
+
+  world.add(make_shared<sphere>(point3(0,0,-1), 0.5));
 
   // Camera
 
@@ -69,7 +71,7 @@ int main() {
       const vec3 ray_direction = pixel_center - camera_center;
       const ray r{camera_center, ray_direction};
       
-      const color pixel_color = ray_color(r);
+      const color pixel_color = ray_color(r, world);
 
       write_color(std::cout, pixel_color);
     }
