@@ -22,7 +22,7 @@ class hittable {
 public:
   virtual ~hittable() = default;
 
-  virtual bool hit(const ray& r, const double ray_tmin, const double ray_tmax, hit_record& rec) const noexcept = 0;
+  virtual bool hit(const ray& r, const interval ray_t, hit_record& rec) const noexcept = 0;
 };
 
 #endif // HITTABLE_H

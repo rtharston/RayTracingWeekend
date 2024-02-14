@@ -8,7 +8,7 @@ class sphere : public hittable {
 public:
   constexpr sphere(const point3 _center, const double _radius) noexcept : center{_center}, radius{_radius} {}
 
-  bool hit(const ray& r, const double ray_tmin, const double ray_tmax, hit_record& rec) const noexcept override {
+  bool hit(const ray& r, const interval ray_t, hit_record& rec) const noexcept override {
     // See sections 5.1 and 6.2 for explanation of this math
     // In short, this checks if the ray hits the sphere by checking if there is
     // a point on the ray that satisfies the formula for the surface of a sphere.
@@ -24,9 +24,9 @@ public:
     const double sqrtd = sqrt(discriminant);
     // Find the nearest root that lies in the acceptable range.
     double root = (-half_b - sqrtd) / a;
-    if (root <= ray_tmin || ray_tmax <= root) {
+    if (!ray_t.surrounds(root)) {
       root = (-half_b + sqrtd) / a;
-      if (root <= ray_tmin || ray_tmax <= root) {
+      if (!ray_t.surrounds(root)) {
         return false;
       }
     }
