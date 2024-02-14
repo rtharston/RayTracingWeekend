@@ -75,8 +75,13 @@ class camera {
     hit_record record;
     // look for hits that aren't super close to the surface (which are likely due to floating point rounding errors)
     if (world.hit(r, interval(0.001, infinity), record)) {
-      // Simple diffused material
-      const vec3 direction = random_on_hemisphere(record.normal);
+      // TODO: make a way to easily select which diffusion algorithm I want to use for each object
+      // // Simple diffused material with rays bounding in random directions
+      // const vec3 direction = random_on_hemisphere(record.normal);
+
+      // Diffused material using Lambertian distribution (darker shadows, more sky color)
+      const vec3 direction = record.normal + random_unit_vector();
+
       // Get the color of the ray that bounced from this hit point
       // Return half the color intensity (to get a gray color)
       return 0.5 * ray_color(ray(record.p, direction), depth-1, world);
