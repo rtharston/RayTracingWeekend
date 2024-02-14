@@ -54,6 +54,8 @@ class camera {
           const double scale = 1.0 / samples_per_pixel;
           pixel_color *= scale;
 
+          linear_to_gamma(pixel_color);
+
           static const interval intensity(0.000, 0.999);
           pixel_color.clamp(intensity);
           
