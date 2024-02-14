@@ -54,6 +54,14 @@ class vec3 {
     constexpr double length_squared() const noexcept {
       return e[0]*e[0] + e[1]*e[1] + e[2]*e[2];
     }
+
+    static vec3 random() noexcept {
+      return vec3(random_double(), random_double(), random_double());
+    }
+
+    static vec3 random(const double min, const double max) noexcept {
+      return vec3(random_double(min, max), random_double(min, max), random_double(min, max));
+    }
 };
 
 // point3 is just an alias for vec3, but useful for clarity in the geometry code
@@ -104,6 +112,27 @@ constexpr inline vec3 cross(const vec3 &u, const vec3 &v) noexcept {
 
 constexpr inline vec3 unit_vector(const vec3 &v) noexcept {
   return v / v.length();
+}
+
+inline vec3 random_in_unit_sphere() {
+  // try random vectors until one is found that lies within a unit sphere
+  while (true) {
+    const vec3 p = vec3::random(-1,1);
+    if (p.length_squared() < 1)
+      return p;
+  }
+}
+
+inline vec3 random_unit_vector() {
+  return unit_vector(random_in_unit_sphere());
+}
+
+inline vec3 random_on_hemisphere(const vec3& normal) {
+  const vec3 on_unit_sphere = random_unit_vector();
+  if (dot(on_unit_sphere, normal) > 0.0) // In the same hemisphere as the normal
+    return on_unit_sphere;
+  else
+    return -on_unit_sphere;
 }
 
 #endif // VEC3_H

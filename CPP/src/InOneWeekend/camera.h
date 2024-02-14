@@ -69,7 +69,11 @@ class camera {
   color ray_color(const ray& r, const hittable& world) const noexcept {
     hit_record record;
     if (world.hit(r, interval(0, infinity), record)) {
-      return 0.5 * (record.normal + color(1,1,1));
+      // Simple diffused material
+      const vec3 direction = random_on_hemisphere(record.normal);
+      // Get the color of the ray that bounced from this hit point
+      // Return half the color intensity (to get a gray color)
+      return 0.5 * ray_color(ray(record.p, direction), world);
     }
 
     const vec3 unit_direction = unit_vector(r.direction());
