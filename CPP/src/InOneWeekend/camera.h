@@ -70,20 +70,7 @@ class camera {
       for (int j = 0; j < image_height; ++j) {
         std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
         for (int i = 0; i < image_width; ++i) {
-          color pixel_color(0,0,0);
-          for (int sample = 0; sample < samples_per_pixel; ++sample) {
-            const ray r = get_ray(i, j);
-            pixel_color += ray_color(r, max_depth, world);
-          }
-
-          pixel_color /= samples_per_pixel;
-
-          linear_to_gamma(pixel_color);
-
-          static const interval intensity(0.000, 0.999);
-          pixel_color.clamp(intensity);
-          
-          write_color(out, pixel_color);
+          write_color(out, render_kernel(world, j, i));
         }
       }
 
@@ -91,8 +78,25 @@ class camera {
       std::clog << "\rDone.                 \n";
     }
 
-  private:
+private:
     
+  color render_kernel(const hittable& world, const int j, const int i) const noexcept {
+    color pixel_color(0,0,0);
+    for (int sample = 0; sample < samples_per_pixel; ++sample) {
+      const ray r = get_ray(i, j);
+      pixel_color += ray_color(r, max_depth, world);
+    }
+
+    pixel_color /= samples_per_pixel;
+
+    linear_to_gamma(pixel_color);
+
+    static const interval intensity(0.000, 0.999);
+    pixel_color.clamp(intensity);
+    
+    return pixel_color;
+  }
+
   color ray_color(const ray& r, const int depth, const hittable& world) const noexcept {
     // If we have exceeded the ray bounce limit, no more light is gathered.
     if (depth <= 0)
