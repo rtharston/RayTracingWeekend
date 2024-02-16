@@ -8,6 +8,7 @@
 #include "material.h"
 
 #include <iosfwd>
+#include <thread>
 
 class camera {
   public:
@@ -66,11 +67,49 @@ class camera {
 
     void render(const hittable& world, std::ostream &out) const noexcept {
       out << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+      const int thread_count = std::thread::hardware_concurrency();
 
-      for (int j = 0; j < image_height; ++j) {
-        std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-        for (int i = 0; i < image_width; ++i) {
-          write_color(out, render_kernel(world, j, i));
+      if (thread_count) {
+        std::vector<std::thread> threads;
+        threads.reserve(thread_count);
+
+        std::vector<std::vector<color>> thread_results;
+        thread_results.reserve(thread_count);
+        // I manually reserve the size to allow the threads to directly assign their results later without worrying about resizing and clearing
+        for (int t = 0; t < thread_count; ++t)
+          thread_results[t].reserve(image_width);
+
+        // Render a whole line per thread to get better utilization out of each thread.
+        auto render_line = [this, &world, &thread_results](int j, int thread_id) {
+          for (int i = 0; i < image_width; ++i) {
+            thread_results[thread_id][i] = render_kernel(world, j, i);
+          }
+        };
+
+        // Only create as many threads as the CPU can handle, to avoid overloading the system
+        for (int j = 0; j < image_height;) {
+          std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
+          // Create as many threads as possible, up to the last row
+          for (int t = 0; t < thread_count && j + t < image_height; ++t) {
+            // std::cout << "starting thread for line `" << j+t << "`." << std::endl;
+            threads[t] = std::thread(render_line, j+t, t);
+          }
+
+          for (int t = 0; t < thread_count && j + t < image_height; ++t) {
+            threads[t].join();
+            for (int i = 0; i < image_width; ++i) {
+              write_color(out, thread_results[t][i]);
+            }
+          }
+          j += thread_count;
+        }
+      } else {
+        // If the cpu count wasn't found for some reason, perform the original single threaded algorithm
+        for (int j = 0; j < image_height; ++j) {
+          std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
+          for (int i = 0; i < image_width; ++i) {
+            write_color(out, render_kernel(world, j, i));
+          }
         }
       }
 
