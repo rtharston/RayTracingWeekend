@@ -1,3 +1,6 @@
+#include <iostream>
+#include <fstream>
+
 #include "rtweekend.h"
 
 #include "camera.h"
@@ -6,7 +9,17 @@
 #include "material.h"
 #include "sphere.h"
 
-int main() {
+int main(int argc, char* argv[]) {
+  // I tried to use a std::ostream* to choose between std::cout and file, but only cout worked for some reason
+  std::ofstream fout;
+  if (argc == 2) {
+    // I create the file here to fail on errors before wasting time rendering an image I can't save
+    fout = std::ofstream{argv[1]};
+    if (!fout) {
+      return -1;
+    }
+  }
+
   hittable_list world;
 
   const auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
@@ -20,7 +33,7 @@ int main() {
   world.add(make_shared<sphere>(point3( 1.0,      0, -1), 0.5, material_right));
 
   constexpr camera cam(16.0 / 9.0, 400, 100, 50);
-  cam.render(world);
+  cam.render(world, argc == 1 ? std::cout : fout);
 
   return 0;
 }

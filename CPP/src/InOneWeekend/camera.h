@@ -39,8 +39,8 @@ class camera {
       pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
     }
 
-    void render(const hittable& world) const noexcept {
-      std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+    void render(const hittable& world, std::ostream &out) const noexcept {
+      out << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
       for (int j = 0; j < image_height; ++j) {
         std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
@@ -58,7 +58,7 @@ class camera {
           static const interval intensity(0.000, 0.999);
           pixel_color.clamp(intensity);
           
-          write_color(std::cout, pixel_color);
+          write_color(out, pixel_color);
         }
       }
 
