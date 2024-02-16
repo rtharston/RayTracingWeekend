@@ -67,7 +67,13 @@ class camera {
 
     void render(const hittable& world, std::ostream &out) const noexcept {
       out << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+      
+      // For my Intel machine with HT the performance is much better with only physical cores active. (32 seconds vs 49!)
+      #if defined(__x86_64__)
+      const int thread_count = std::thread::hardware_concurrency() / 2;
+      #else
       const int thread_count = std::thread::hardware_concurrency();
+      #endif
 
       if (thread_count) {
         std::vector<std::thread> threads;
