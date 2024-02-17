@@ -58,14 +58,22 @@ public:
   constexpr dielectric(const double index_of_refraction) : ir(index_of_refraction) {}
 
   bool scatter(const ray& r_in, const hit_record& rec, color& attenuation, ray& scattered) const noexcept override {
-    // TODO: add chance to reflect instead of refract
     attenuation = white;
     const double refraction_ratio = rec.front_face ? (1.0/ir) : ir;
 
     const vec3 unit_direction = unit_vector(r_in.direction());
-    const vec3 refracted = refract(unit_direction, rec.normal, refraction_ratio);
+    const double cos_theta = fmin(dot(-unit_direction, rec.normal), 1.0);
+    const double sin_theta = sqrt(1.0 - cos_theta*cos_theta);
 
-    scattered = ray(rec.p, refracted);
+    const bool cannot_refract = refraction_ratio * sin_theta > 1.0;
+    vec3 direction;
+
+    if (cannot_refract)
+      direction = reflect(unit_direction, rec.normal);
+    else
+      direction = refract(unit_direction, rec.normal, refraction_ratio);
+
+    scattered = ray(rec.p, direction);
     return true;
   }
 
