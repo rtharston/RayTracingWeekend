@@ -11,19 +11,23 @@
 
 class camera {
   public:
-    constexpr camera(const double _aspect_ratio, const int _image_width, const int _samples_per_pixel, const int _max_depth) noexcept 
+    // This was constexpr until I had to include tan...
+    /* constexpr */ camera(const double _aspect_ratio, const int _image_width, const int _samples_per_pixel, const int _max_depth, const double _vfov) noexcept 
     : aspect_ratio(_aspect_ratio),
       image_width(_image_width),
       image_height(static_cast<int>(image_width / aspect_ratio)),
       samples_per_pixel(_samples_per_pixel),
       max_depth(_max_depth),
-      center(0, 0, 0)
+      center(0, 0, 0),
+      vfov(_vfov)
     {
       // Ensure that image height is at least 1.
       // static_assert(image_height > 1, "image height is less than 1");
 
       const double focal_length = 1.0;
-      const double viewport_height = 2.0;
+      const double theta = degrees_to_radian(vfov);
+      const double h = tan(theta/2);
+      const double viewport_height = 2.0 * h * focal_length;
       const double viewport_width = viewport_height * aspect_ratio;
 
       // Calculate the vectors across the horizontal and down the vertical viewport edges.
@@ -115,6 +119,7 @@ class camera {
   const int samples_per_pixel;
   const int max_depth;   // Maximum number of ray bounces into scene
   const point3 center;   // Camera center
+  const double vfov;     // Vertical view angle (field of view)
   point3 pixel00_loc;    // Location of pixel 0, 0
   vec3   pixel_delta_u;  // Offset to pixel to the right
   vec3   pixel_delta_v;  // Offset to pixel below
