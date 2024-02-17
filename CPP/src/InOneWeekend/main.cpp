@@ -22,26 +22,18 @@ int main(int argc, char* argv[]) {
 
   hittable_list world;
 
-  // const auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
-  // const auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
-  // const auto material_left   = make_shared<dielectric>(1.5);
-  // const auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 1.0);
+  const auto material_ground = make_shared<lambertian>(color(0.8, 0.8, 0.0));
+  const auto material_center = make_shared<lambertian>(color(0.1, 0.2, 0.5));
+  const auto material_left   = make_shared<dielectric>(1.5);
+  const auto material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 1.0);
 
-  // world.add(make_shared<sphere>(point3( 0.0, -100.5, -1), 100.0, material_ground));
-  // world.add(make_shared<sphere>(point3( 0.0,    0.0, -1),   0.5, material_center));
-  // world.add(make_shared<sphere>(point3(-1.0,    0.0, -1),   0.5, material_left));
-  // world.add(make_shared<sphere>(point3(-1.0,    0.0, -1),  -0.4, material_left));
-  // world.add(make_shared<sphere>(point3( 1.0,    0.0, -1),   0.5, material_right));
+  world.add(make_shared<sphere>(point3( 0.0, -100.5, -1), 100.0, material_ground));
+  world.add(make_shared<sphere>(point3( 0.0,    0.0, -1),   0.5, material_center));
+  world.add(make_shared<sphere>(point3(-1.0,    0.0, -1),   0.5, material_left));
+  world.add(make_shared<sphere>(point3(-1.0,    0.0, -1),  -0.4, material_left));
+  world.add(make_shared<sphere>(point3( 1.0,    0.0, -1),   0.5, material_right));
 
-  const auto R = cos(pi/4);
-
-  const auto material_left  = make_shared<lambertian>(blue);
-  const auto material_right = make_shared<lambertian>(red);
-
-  world.add(make_shared<sphere>(point3(-R, 0, -1), R, material_left));
-  world.add(make_shared<sphere>(point3( R, 0, -1), R, material_right));
-
-  const camera cam(16.0 / 9.0, 400, 100, 50, 90);
+  const camera cam(16.0 / 9.0, 400, 100, 50, 90, point3(-2,2,1), point3(0,0,-1), vec3(0,1,0));
   cam.render(world, argc == 1 ? std::cout : fout);
 
   return 0;

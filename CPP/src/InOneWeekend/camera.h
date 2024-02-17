@@ -12,34 +12,48 @@
 class camera {
   public:
     // This was constexpr until I had to include tan...
-    /* constexpr */ camera(const double _aspect_ratio, const int _image_width, const int _samples_per_pixel, const int _max_depth, const double _vfov) noexcept 
+    /* constexpr */ camera(
+      const double _aspect_ratio,
+      const int _image_width,
+      const int _samples_per_pixel, 
+      const int _max_depth,
+      const double _vfov,
+      const point3 lookfrom,
+      const point3 lookat,
+      const vec3 vup
+    ) noexcept 
     : aspect_ratio(_aspect_ratio),
       image_width(_image_width),
       image_height(static_cast<int>(image_width / aspect_ratio)),
       samples_per_pixel(_samples_per_pixel),
       max_depth(_max_depth),
-      center(0, 0, 0),
+      center(lookfrom),
       vfov(_vfov)
     {
       // Ensure that image height is at least 1.
       // static_assert(image_height > 1, "image height is less than 1");
 
-      const double focal_length = 1.0;
+      const double focal_length = (lookfrom - lookat).length();
       const double theta = degrees_to_radian(vfov);
       const double h = tan(theta/2);
       const double viewport_height = 2.0 * h * focal_length;
       const double viewport_width = viewport_height * aspect_ratio;
 
+      // Calculate the u,v,w unit basis vectors for the camera coordinate frame.
+      const vec3 w = unit_vector(lookfrom - lookat);
+      const vec3 u = unit_vector(cross(vup, w));
+      const vec3 v = cross(w, u);
+
       // Calculate the vectors across the horizontal and down the vertical viewport edges.
-      const vec3 viewport_u{viewport_width, 0, 0};
-      const vec3 viewport_v{0, -viewport_height, 0};
+      const vec3 viewport_u = viewport_width * u;
+      const vec3 viewport_v = viewport_height * -v;
 
       // Calculate the horizontal and vertical delta vectors from pixel to pixel.
       pixel_delta_u = viewport_u / image_width;
       pixel_delta_v = viewport_v / image_height;
 
       // Calculate the location of the upper left pixel.
-      const point3 viewport_upper_left = center - vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2;
+      const point3 viewport_upper_left = center - (focal_length * w) - viewport_u/2 - viewport_v/2;
       pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
     }
 
