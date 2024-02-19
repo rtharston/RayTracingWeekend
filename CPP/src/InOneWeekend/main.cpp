@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
   auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
   world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
 
-  const camera cam(16.0 / 9.0, 400, 10, 50, 20, point3(13,2,3), point3(0,0,0), vec3(0,1,0), 0.6, 10);
+  const camera cam(16.0 / 9.0, 1200, 500, 50, 20, point3(13,2,3), point3(0,0,0), vec3(0,1,0), 0.6, 10);
   cam.render(world, argc == 1 ? std::cout : fout);
 
   return 0;
