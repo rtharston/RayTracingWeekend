@@ -25,8 +25,8 @@ int main(int argc, char* argv[]) {
   auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
   world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
 
-  for (int a = -11; a < 11; a++) {
-    for (int b = -11; b < 11; b++) {
+  for (int a = -12; a < 12; a++) {
+    for (int b = -12; b < 12; b++) {
       auto choose_mat = random_double();
       point3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
 
@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
   auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
   world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
 
-  const camera cam(16.0 / 9.0, 1200, 500, 50, 20, point3(13,2,3), point3(0,0,0), vec3(0,1,0), 0.6, 10);
+  const camera cam(16.0 / 9.0, 5120, 500, 50, 30, point3(13,2,3), point3(0,0,0), vec3(0,1,0), 0.6, 10);
   cam.render(world, argc == 1 ? std::cout : fout);
 
   return 0;
