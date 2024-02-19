@@ -65,50 +65,64 @@ class camera {
       defocus_disk_v = v * defocus_radius;
     }
 
-    void render(const hittable& world, std::ostream &out) const noexcept {
-      out << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+    void render(const hittable& world, const std::string file_name) const noexcept {
       const int thread_count = std::thread::hardware_concurrency();
 
       if (thread_count) {
         std::vector<std::thread> threads;
         threads.reserve(thread_count);
+        const int samples_per_pixel_local = (samples_per_pixel / thread_count) + 1; // +1 to round up after int arithmetic
 
-        std::vector<std::vector<color>> thread_results;
-        thread_results.reserve(thread_count);
-        // I manually reserve the size to allow the threads to directly assign their results later without worrying about resizing and clearing
-        for (int t = 0; t < thread_count; ++t)
-          thread_results[t].reserve(image_width);
+        auto render_image = [this, &world, samples_per_pixel_local](const std::string& file_name, const int thread_id) {
+          std::ofstream fout{file_name};
+          if (!fout) {
+            exit(-2);
+          }
 
-        // Render a whole line per thread to get better utilization out of each thread.
-        auto render_line = [this, &world, &thread_results](int j, int thread_id) {
-          for (int i = 0; i < image_width; ++i) {
-            thread_results[thread_id][i] = render_kernel(world, j, i);
+          fout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+
+          for (int j = 0; j < image_height; ++j) {
+            // Only the first thread logs, to avoid issues with them writing over each other (could I make them all print to different lines?)
+            if (thread_id == 0) {
+              std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
+            }
+            for (int i = 0; i < image_width; ++i) {
+              write_color(fout, render_kernel(world, j, i, samples_per_pixel_local));
+            }
           }
         };
 
         // Only create as many threads as the CPU can handle, to avoid overloading the system
-        for (int j = 0; j < image_height;) {
-          std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
-          // Create as many threads as possible, up to the last row
-          for (int t = 0; t < thread_count && j + t < image_height; ++t) {
-            // std::cout << "starting thread for line `" << j+t << "`." << std::endl;
-            threads[t] = std::thread(render_line, j+t, t);
-          }
+        for (int t = 0; t < thread_count; ++t) {
+          const std::string base_name = file_name.substr(0, file_name.find_last_of("."));
+          const std::string ext = file_name.substr(file_name.find_last_of("."));
 
-          for (int t = 0; t < thread_count && j + t < image_height; ++t) {
-            threads[t].join();
-            for (int i = 0; i < image_width; ++i) {
-              write_color(out, thread_results[t][i]);
-            }
+          const std::string file_name_thread_id = base_name + "_" + std::to_string(t+1) + ext; 
+          std::ofstream fout{file_name_thread_id};
+          if (!fout) {
+            exit(-2);
           }
-          j += thread_count;
+          
+          // std::cout << "opened file: " << file_name_thread_id << std::endl;
+          threads[t] = std::thread(render_image, file_name_thread_id, t);
+        }
+
+        for (int t = 0; t < thread_count; ++t) {
+          threads[t].join();
+          // TODO: add "thread t complete"
         }
       } else {
+        std::ofstream fout{file_name};
+        if (!fout) {
+          exit(-2);
+        }
+        fout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+
         // If the cpu count wasn't found for some reason, perform the original single threaded algorithm
         for (int j = 0; j < image_height; ++j) {
           std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
           for (int i = 0; i < image_width; ++i) {
-            write_color(out, render_kernel(world, j, i));
+            write_color(fout, render_kernel(world, j, i, samples_per_pixel));
           }
         }
       }
@@ -119,14 +133,14 @@ class camera {
 
 private:
     
-  color render_kernel(const hittable& world, const int j, const int i) const noexcept {
+  color render_kernel(const hittable& world, const int j, const int i, const int samples_per_pixel_local) const noexcept {
     color pixel_color(0,0,0);
-    for (int sample = 0; sample < samples_per_pixel; ++sample) {
+    for (int sample = 0; sample < samples_per_pixel_local; ++sample) {
       const ray r = get_ray(i, j);
       pixel_color += ray_color(r, max_depth, world);
     }
 
-    pixel_color /= samples_per_pixel;
+    pixel_color /= samples_per_pixel_local;
 
     linear_to_gamma(pixel_color);
 

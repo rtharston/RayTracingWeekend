@@ -10,14 +10,8 @@
 #include "sphere.h"
 
 int main(int argc, char* argv[]) {
-  // I tried to use a std::ostream* to choose between std::cout and file, but only cout worked for some reason
-  std::ofstream fout;
-  if (argc == 2) {
-    // I create the file here to fail on errors before wasting time rendering an image I can't save
-    fout = std::ofstream{argv[1]};
-    if (!fout) {
-      return -1;
-    }
+  if (argc < 2) {
+    return -1;
   }
 
   hittable_list world;
@@ -63,7 +57,7 @@ int main(int argc, char* argv[]) {
   world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
 
   const camera cam(16.0 / 9.0, 400, 10, 50, 20, point3(13,2,3), point3(0,0,0), vec3(0,1,0), 0.6, 10);
-  cam.render(world, argc == 1 ? std::cout : fout);
+  cam.render(world, argv[1]);
 
   return 0;
 }
