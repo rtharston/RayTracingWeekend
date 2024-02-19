@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
   world.add(make_shared<sphere>(point3(-1.0,    0.0, -1),  -0.4, material_left));
   world.add(make_shared<sphere>(point3( 1.0,    0.0, -1),   0.5, material_right));
 
-  const camera cam(16.0 / 9.0, 400, 100, 50, 90, point3(-2,2,1), point3(0,0,-1), vec3(0,1,0));
+  const camera cam(16.0 / 9.0, 400, 100, 50, 90, point3(-2,2,1), point3(0,0,-1), vec3(0,1,0), 10, 3.4);
   cam.render(world, argc == 1 ? std::cout : fout);
 
   return 0;

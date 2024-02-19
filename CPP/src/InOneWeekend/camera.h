@@ -20,7 +20,9 @@ class camera {
       const double _vfov,
       const point3 lookfrom,
       const point3 lookat,
-      const vec3 vup
+      const vec3 vup,
+      const double _defocus_angle,
+      const double focus_dist
     ) noexcept 
     : aspect_ratio(_aspect_ratio),
       image_width(_image_width),
@@ -28,15 +30,15 @@ class camera {
       samples_per_pixel(_samples_per_pixel),
       max_depth(_max_depth),
       center(lookfrom),
-      vfov(_vfov)
+      vfov(_vfov),
+      defocus_angle(_defocus_angle)
     {
       // Ensure that image height is at least 1.
       // static_assert(image_height > 1, "image height is less than 1");
 
-      const double focal_length = (lookfrom - lookat).length();
       const double theta = degrees_to_radian(vfov);
       const double h = tan(theta/2);
-      const double viewport_height = 2.0 * h * focal_length;
+      const double viewport_height = 2.0 * h * focus_dist;
       const double viewport_width = viewport_height * aspect_ratio;
 
       // Calculate the u,v,w unit basis vectors for the camera coordinate frame.
@@ -53,8 +55,13 @@ class camera {
       pixel_delta_v = viewport_v / image_height;
 
       // Calculate the location of the upper left pixel.
-      const point3 viewport_upper_left = center - (focal_length * w) - viewport_u/2 - viewport_v/2;
+      const point3 viewport_upper_left = center - (focus_dist * w) - viewport_u/2 - viewport_v/2;
       pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
+
+      // Calculate the camera defocus disk basis vectors
+      const auto defocus_radius = focus_dist * tan(degrees_to_radian(defocus_angle / 2));
+      defocus_disk_u = u * defocus_radius;
+      defocus_disk_v = v * defocus_radius;
     }
 
     void render(const hittable& world, std::ostream &out) const noexcept {
@@ -109,12 +116,13 @@ class camera {
   }
 
   ray get_ray(const int i, const int j) const noexcept {
-    // Get a randomly sampled camera ray for the pixel at location i,j.
+    // Get a randomly sampled camera ray for the pixel at location i,j, originating from
+    // the camera defocus disk.
 
     const vec3 pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
     const vec3 pixel_sample = pixel_center + pixel_sample_square();
 
-    const point3 ray_origin = center;
+    const point3 ray_origin = (defocus_angle <= 0) ? center : defocus_disk_sample();
     const vec3 ray_direction = pixel_sample - ray_origin;
 
     return ray(ray_origin, ray_direction);
@@ -127,6 +135,12 @@ class camera {
     return (px * pixel_delta_u) + (py * pixel_delta_v);
   }
 
+  point3 defocus_disk_sample() const noexcept {
+    // Returns a random point in the camera defocus disk;
+    const vec3 p = random_in_unit_disk();
+    return center + (p[0] * defocus_disk_u) + (p[1] * defocus_disk_v);
+  }
+
   const double aspect_ratio;
   const int image_width;
   const int image_height;
@@ -134,9 +148,12 @@ class camera {
   const int max_depth;   // Maximum number of ray bounces into scene
   const point3 center;   // Camera center
   const double vfov;     // Vertical view angle (field of view)
+  const double defocus_angle; // TODO: consider making this optional
   point3 pixel00_loc;    // Location of pixel 0, 0
   vec3   pixel_delta_u;  // Offset to pixel to the right
   vec3   pixel_delta_v;  // Offset to pixel below
+  vec3   defocus_disk_u; // Defocus disk horizontal radius
+  vec3   defocus_disk_v; // Defocus disk vertical radius
 };
 
 #endif

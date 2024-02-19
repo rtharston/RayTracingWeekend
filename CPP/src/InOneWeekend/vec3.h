@@ -120,6 +120,15 @@ constexpr inline vec3 unit_vector(const vec3 &v) noexcept {
   return v / v.length();
 }
 
+inline vec3 random_in_unit_disk() {
+  // try random vectors until one is found that lies within a unit disk
+  while (true) {
+    const vec3 p = vec3(random_double(-1,1), random_double(-1,1), 0);
+    if (p.length_squared() < 1)
+      return p;
+  }
+}
+
 inline vec3 random_in_unit_sphere() {
   // try random vectors until one is found that lies within a unit sphere
   while (true) {
