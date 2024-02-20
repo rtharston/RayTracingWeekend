@@ -51,11 +51,11 @@ public:
 };
 
 // naive multi-hit method just to test the concept in the code that calls this.
-// DO NOT USE `std::bitset<8>` instead of std::array<bool, 8> it slowed my test from 25 to 32 seconds!
-std::array<bool, 8> hit_spheres_avx2(const std::array<sphere*, 8> spheres, const ray& r, const interval ray_t, std::array<hit_record, 8>& recs, const int obj_count) noexcept {
-  std::array<bool, 8> results;
+// DO NOT USE `std::bitset<4>` instead of std::array<bool, 4> it slowed my test from 25 to 32 seconds!
+std::array<bool, 4> hit_spheres_avx2(const std::array<sphere*, 4> spheres, const ray& r, const interval ray_t, std::array<hit_record, 4>& recs, const int obj_count) noexcept {
+  std::array<bool, 4> results;
   
-  // The tail of the outer loop might not pass in 8 objects, so ignore the last values
+  // The tail of the outer loop might not pass in 4 objects, so ignore the last values
   for (int i = 0; i < obj_count && i < spheres.size(); ++i) {
     const auto& sphere = spheres[i];
 

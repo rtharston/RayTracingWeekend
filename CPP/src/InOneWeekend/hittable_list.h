@@ -27,7 +27,7 @@ public:
   
   bool hit(const ray& r, const interval ray_t, hit_record& rec) const noexcept override {
     // TODO: make this configurable depending on AVX support (hard coded for now because this is for my CPU)
-    constexpr auto max_obj_count = 8;
+    constexpr auto max_obj_count = 4;
 
     std::array<sphere*, max_obj_count> spheres;
     std::array<hit_record, max_obj_count> recs;
