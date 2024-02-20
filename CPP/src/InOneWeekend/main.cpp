@@ -62,7 +62,11 @@ int main(int argc, char* argv[]) {
   auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
   world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
 
-  const camera cam(16.0 / 9.0, 5120, 500, 50, 30, point3(13,2,3), point3(0,0,0), vec3(0,1,0), 0.6, 10);
+  // iMac 5k
+  // const camera cam(16.0 / 9.0, 5120, 500, 50, 30, point3(13,2,3), point3(0,0,0), vec3(0,1,0), 0.6, 10);
+
+  // 13" M2 MBA
+  const camera cam(2940.0 / 1912.0, 2940, 500, 50, 30, point3(13,2,3), point3(0,0,0), vec3(0,1,0), 0.6, 10);
   cam.render(world, argc == 1 ? std::cout : fout);
 
   return 0;
