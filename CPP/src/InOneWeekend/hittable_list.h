@@ -29,7 +29,7 @@ public:
     // TODO: make this configurable depending on AVX support (hard coded for now because this is for my CPU)
     constexpr auto max_obj_count = 8;
 
-    std::array<shared_ptr<sphere>, max_obj_count> spheres;
+    std::array<sphere*, max_obj_count> spheres;
     std::array<hit_record, max_obj_count> recs;
     // hit_record temp_rec;
     bool hit_anything = false;
@@ -40,7 +40,7 @@ public:
 
       // TODO: once support for more than `sphere` is added, gather as many as the same type as possible, call the appropriate method, then move to the next type of object
       for (; obj_count < max_obj_count && (obj_count+i) < objects.size(); ++obj_count) {
-        spheres[obj_count] = objects[obj_count+i];
+        spheres[obj_count] = objects[obj_count+i].get();
       }
 
       const auto results = hit_spheres_avx2(spheres, r, interval(ray_t.min, closest_so_far), recs, obj_count);

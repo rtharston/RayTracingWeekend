@@ -52,7 +52,7 @@ public:
 
 // naive multi-hit method just to test the concept in the code that calls this.
 // TODO: use `std::bitset<8>`?
-std::array<bool, 8> hit_spheres_avx2(const std::array<std::shared_ptr<sphere>, 8> spheres, const ray& r, const interval ray_t, std::array<hit_record, 8>& recs, const int obj_count) noexcept {
+std::array<bool, 8> hit_spheres_avx2(const std::array<sphere*, 8> spheres, const ray& r, const interval ray_t, std::array<hit_record, 8>& recs, const int obj_count) noexcept {
   std::array<bool, 8> results;
   
   // The tail of the outer loop might not pass in 8 objects, so ignore the last values
