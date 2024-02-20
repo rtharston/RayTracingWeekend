@@ -52,7 +52,7 @@ public:
 
 // naive multi-hit method just to test the concept in the code that calls this.
 // DO NOT USE `std::bitset<4>` instead of std::array<bool, 4> it slowed my test from 25 to 32 seconds!
-std::array<bool, 4> hit_spheres_avx2(const std::array<sphere*, 4> spheres, const ray& r, const interval ray_t, std::array<hit_record, 4>& recs, const int obj_count) noexcept {
+std::array<bool, 4> hit_spheres_avx2(const std::array<sphere*, 4> spheres, const ray& r, const double a, const interval ray_t, std::array<hit_record, 4>& recs, const int obj_count) noexcept {
   std::array<bool, 4> results;
   
   // The tail of the outer loop might not pass in 4 objects, so ignore the last values
@@ -64,7 +64,6 @@ std::array<bool, 4> hit_spheres_avx2(const std::array<sphere*, 4> spheres, const
     // a point on the ray that satisfies the formula for the surface of a sphere.
     // The original formula is x^2+y^2+z^2=r^2, but it has been rearranged below.
     const vec3 oc = r.origin() - sphere->center;
-    const double a = r.direction().length_squared();
     const double half_b = dot(oc, r.direction());
     const double c = oc.length_squared() - sphere->radius*sphere->radius;
 

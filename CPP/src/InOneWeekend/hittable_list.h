@@ -43,7 +43,8 @@ public:
         spheres[obj_count] = objects[obj_count+i].get();
       }
 
-      const auto results = hit_spheres_avx2(spheres, r, interval(ray_t.min, closest_so_far), recs, obj_count);
+      const double a = r.direction().length_squared();
+      const auto results = hit_spheres_avx2(spheres, r, a, interval(ray_t.min, closest_so_far), recs, obj_count);
 
       for (int j = 0; j < obj_count; ++j) {
         // multiple objects may be hit in the same test, so we can't blindly record all hits; e.g. results[4] might be farther than results[2], so don't record results[4]
