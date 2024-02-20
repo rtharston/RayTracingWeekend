@@ -23,7 +23,7 @@ public:
     const double c = oc.length_squared() - radius*radius;
 
     const double discriminant = half_b*half_b - a*c;
-    if (discriminant >= 0) return false;
+    if (discriminant < 0) return false;
 
     const double sqrtd = sqrt(discriminant);
     // Find the nearest root that lies in the acceptable range.
@@ -65,9 +65,10 @@ std::array<bool, 4> hit_spheres_avx2(const std::array<sphere*, 4> spheres, const
   const double c = oc.length_squared() - spheres[0]->radius * spheres[0]->radius;
 
   const double discriminant = half_b*half_b - a*c;
-  results[0] = discriminant >= 0;
-
-  if (results[0]) {
+  if (discriminant < 0)
+    results[0] = false;
+  else {
+    results[0] = true;
     const double sqrtd = sqrt(discriminant);
     // Find the nearest root that lies in the acceptable range.
     double root = (-half_b - sqrtd) / a;
@@ -93,9 +94,10 @@ std::array<bool, 4> hit_spheres_avx2(const std::array<sphere*, 4> spheres, const
     const double c = oc.length_squared() - spheres[1]->radius * spheres[1]->radius;
 
     const double discriminant = half_b*half_b - a*c;
-    results[1] = discriminant >= 0;
-
-    if (results[1]) {
+    if (discriminant < 0)
+      results[1] = false;
+    else {
+      results[1] = true;
       const double sqrtd = sqrt(discriminant);
       // Find the nearest root that lies in the acceptable range.
       double root = (-half_b - sqrtd) / a;
@@ -122,9 +124,10 @@ std::array<bool, 4> hit_spheres_avx2(const std::array<sphere*, 4> spheres, const
     const double c = oc.length_squared() - spheres[2]->radius * spheres[2]->radius;
 
     const double discriminant = half_b*half_b - a*c;
-    results[2] = discriminant >= 0;
-
-    if (results[2]) {
+    if (discriminant < 0)
+      results[2] = false;
+    else {
+      results[2] = true;
       const double sqrtd = sqrt(discriminant);
       // Find the nearest root that lies in the acceptable range.
       double root = (-half_b - sqrtd) / a;
@@ -151,9 +154,10 @@ std::array<bool, 4> hit_spheres_avx2(const std::array<sphere*, 4> spheres, const
     const double c = oc.length_squared() - spheres[3]->radius * spheres[3]->radius;
 
     const double discriminant = half_b*half_b - a*c;
-    results[3] = discriminant >= 0;
-
-    if (results[3]) {
+    if (discriminant < 0)
+      results[3] = false;
+    else {
+      results[3] = true;
       const double sqrtd = sqrt(discriminant);
       // Find the nearest root that lies in the acceptable range.
       double root = (-half_b - sqrtd) / a;
