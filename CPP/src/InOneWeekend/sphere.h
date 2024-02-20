@@ -23,7 +23,7 @@ public:
     const double c = oc.length_squared() - radius*radius;
 
     const double discriminant = half_b*half_b - a*c;
-    if (discriminant < 0) return false;
+    if (discriminant >= 0) return false;
 
     const double sqrtd = sqrt(discriminant);
     // Find the nearest root that lies in the acceptable range.
@@ -52,45 +52,126 @@ public:
 
 // naive multi-hit method just to test the concept in the code that calls this.
 // DO NOT USE `std::bitset<4>` instead of std::array<bool, 4> it slowed my test from 25 to 32 seconds!
-std::array<bool, 4> hit_spheres_avx2(const std::array<sphere*, 4> spheres, const ray& r, const double a, const interval ray_t, std::array<hit_record, 4>& recs, const int obj_count) noexcept {
+std::array<bool, 4> hit_spheres_avx2(const std::array<sphere*, 4> spheres, const ray& r, const double a, const interval ray_t, std::array<hit_record, 4>& recs, const int sphere_count) noexcept {
   std::array<bool, 4> results;
-  
-  // The tail of the outer loop might not pass in 4 objects, so ignore the last values
-  for (int i = 0; i < obj_count && i < spheres.size(); ++i) {
-    const auto& sphere = spheres[i];
 
-    // See sections 5.1 and 6.2 for explanation of this math
-    // In short, this checks if the ray hits the sphere by checking if there is
-    // a point on the ray that satisfies the formula for the surface of a sphere.
-    // The original formula is x^2+y^2+z^2=r^2, but it has been rearranged below.
-    const vec3 oc = r.origin() - sphere->center;
-    const double half_b = dot(oc, r.direction());
-    const double c = oc.length_squared() - sphere->radius*sphere->radius;
+  // See sections 5.1 and 6.2 for explanation of this math
+  // In short, this checks if the ray hits the sphere by checking if there is
+  // a point on the ray that satisfies the formula for the surface of a sphere.
+  // The original formula is x^2+y^2+z^2=r^2, but it has been rearranged below.
 
-    const double discriminant = half_b*half_b - a*c;
-    if (discriminant < 0) {
-      results[i] = false;
-      continue; 
-    }
+  const vec3 oc = r.origin() - spheres[0]->center;
+  const double half_b = dot(oc, r.direction());
+  const double c = oc.length_squared() - spheres[0]->radius * spheres[0]->radius;
 
+  const double discriminant = half_b*half_b - a*c;
+  results[0] = discriminant >= 0;
+
+  if (results[0]) {
     const double sqrtd = sqrt(discriminant);
     // Find the nearest root that lies in the acceptable range.
     double root = (-half_b - sqrtd) / a;
     if (!ray_t.surrounds(root)) {
       root = (-half_b + sqrtd) / a;
       if (!ray_t.surrounds(root)) {
-      results[i] = false;
-      continue; 
+      results[0] = false;
       }
     }
 
-    recs[i].t = root;
-    recs[i].p = r.at(recs[i].t);
-    vec3 outward_normal = (recs[i].p - sphere->center) / sphere->radius;
-    recs[i].set_face_normal(r, outward_normal);
-    recs[i].mat = sphere->mat;
+    if (results[0]) {
+      recs[0].t = root;
+      recs[0].p = r.at(recs[0].t);
+      vec3 outward_normal = (recs[0].p - spheres[0]->center) / spheres[0]->radius;
+      recs[0].set_face_normal(r, outward_normal);
+      recs[0].mat = spheres[0]->mat;
+    }
+  }
 
-    results[i] = true;
+  if (sphere_count > 0) {
+    const vec3 oc = r.origin() - spheres[1]->center;
+    const double half_b = dot(oc, r.direction());
+    const double c = oc.length_squared() - spheres[1]->radius * spheres[1]->radius;
+
+    const double discriminant = half_b*half_b - a*c;
+    results[1] = discriminant >= 0;
+
+    if (results[1]) {
+      const double sqrtd = sqrt(discriminant);
+      // Find the nearest root that lies in the acceptable range.
+      double root = (-half_b - sqrtd) / a;
+      if (!ray_t.surrounds(root)) {
+        root = (-half_b + sqrtd) / a;
+        if (!ray_t.surrounds(root)) {
+        results[1] = false;
+        }
+      }
+
+      if (results[1]) {
+        recs[1].t = root;
+        recs[1].p = r.at(recs[1].t);
+        vec3 outward_normal = (recs[1].p - spheres[1]->center) / spheres[1]->radius;
+        recs[1].set_face_normal(r, outward_normal);
+        recs[1].mat = spheres[1]->mat;
+      }
+    }
+  }
+
+  if (sphere_count > 1) {
+    const vec3 oc = r.origin() - spheres[2]->center;
+    const double half_b = dot(oc, r.direction());
+    const double c = oc.length_squared() - spheres[2]->radius * spheres[2]->radius;
+
+    const double discriminant = half_b*half_b - a*c;
+    results[2] = discriminant >= 0;
+
+    if (results[2]) {
+      const double sqrtd = sqrt(discriminant);
+      // Find the nearest root that lies in the acceptable range.
+      double root = (-half_b - sqrtd) / a;
+      if (!ray_t.surrounds(root)) {
+        root = (-half_b + sqrtd) / a;
+        if (!ray_t.surrounds(root)) {
+        results[2] = false;
+        }
+      }
+
+      if (results[2]) {
+        recs[2].t = root;
+        recs[2].p = r.at(recs[2].t);
+        vec3 outward_normal = (recs[2].p - spheres[2]->center) / spheres[2]->radius;
+        recs[2].set_face_normal(r, outward_normal);
+        recs[2].mat = spheres[2]->mat;
+      }
+    }
+  }
+
+  if (sphere_count > 2) {
+    const vec3 oc = r.origin() - spheres[3]->center;
+    const double half_b = dot(oc, r.direction());
+    const double c = oc.length_squared() - spheres[3]->radius * spheres[3]->radius;
+
+    const double discriminant = half_b*half_b - a*c;
+    results[3] = discriminant >= 0;
+
+    if (results[3]) {
+      const double sqrtd = sqrt(discriminant);
+      // Find the nearest root that lies in the acceptable range.
+      double root = (-half_b - sqrtd) / a;
+      if (!ray_t.surrounds(root)) {
+        root = (-half_b + sqrtd) / a;
+        if (!ray_t.surrounds(root)) {
+        results[3] = false;
+        }
+      }
+
+      if (results[3]) {
+        recs[3].t = root;
+        recs[3].p = r.at(recs[3].t);
+        vec3 outward_normal = (recs[3].p - spheres[3]->center) / spheres[3]->radius;
+        recs[3].set_face_normal(r, outward_normal);
+        recs[3].mat = spheres[3]->mat;
+      }
+    }
   }
 
   return results;
