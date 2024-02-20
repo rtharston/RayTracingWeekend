@@ -48,6 +48,8 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wunused-variable) # Variable is defined but unused
 endif()
 
+add_compile_options(-O1)
+
 # Executables
 add_executable(inOneWeekend      ${SOURCE_ONE_WEEKEND})
 # add_executable(theNextWeek       ${SOURCE_NEXT_WEEK})
