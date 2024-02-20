@@ -54,11 +54,21 @@ public:
 // DO NOT USE `std::bitset<4>` instead of std::array<bool, 4> it slowed my test from 25 to 32 seconds!
 std::array<bool, 4> hit_spheres_avx2(const std::array<sphere*, 4> spheres, const ray& r, const double a, const interval ray_t, std::array<hit_record, 4>& recs, const int sphere_count) noexcept {
   std::array<bool, 4> results;
+  
+  if (sphere_count < 4) {
+    for (int i = 0; i < sphere_count && i < spheres.size(); ++i) {
+      results[i] = spheres[i]->hit(r, ray_t, recs[i]);
+    }
+
+    return results;
+  }
 
   // See sections 5.1 and 6.2 for explanation of this math
   // In short, this checks if the ray hits the sphere by checking if there is
   // a point on the ray that satisfies the formula for the surface of a sphere.
   // The original formula is x^2+y^2+z^2=r^2, but it has been rearranged below.
+
+  // TODO: convert the parts with doubles into AVX
 
   const vec3 oc = r.origin() - spheres[0]->center;
   const double half_b = dot(oc, r.direction());
@@ -88,7 +98,7 @@ std::array<bool, 4> hit_spheres_avx2(const std::array<sphere*, 4> spheres, const
     }
   }
 
-  if (sphere_count > 0) {
+  {
     const vec3 oc = r.origin() - spheres[1]->center;
     const double half_b = dot(oc, r.direction());
     const double c = oc.length_squared() - spheres[1]->radius * spheres[1]->radius;
@@ -118,7 +128,7 @@ std::array<bool, 4> hit_spheres_avx2(const std::array<sphere*, 4> spheres, const
     }
   }
 
-  if (sphere_count > 1) {
+  {
     const vec3 oc = r.origin() - spheres[2]->center;
     const double half_b = dot(oc, r.direction());
     const double c = oc.length_squared() - spheres[2]->radius * spheres[2]->radius;
@@ -148,7 +158,7 @@ std::array<bool, 4> hit_spheres_avx2(const std::array<sphere*, 4> spheres, const
     }
   }
 
-  if (sphere_count > 2) {
+  {
     const vec3 oc = r.origin() - spheres[3]->center;
     const double half_b = dot(oc, r.direction());
     const double c = oc.length_squared() - spheres[3]->radius * spheres[3]->radius;
