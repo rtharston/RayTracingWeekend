@@ -3,6 +3,8 @@
 
 #include "hittable.h"
 
+#include "sphere.h"
+
 #include <memory>
 #include <vector>
 
@@ -11,28 +13,47 @@ using std::make_shared;
 
 class hittable_list : public hittable {
 public:
-  std::vector<shared_ptr<hittable>> objects;
+  // TODO: change this back to hittable
+  std::vector<shared_ptr<sphere>> objects;
 
   hittable_list() noexcept {}
-  hittable_list(const shared_ptr<hittable> object) noexcept { add(object); }
+  hittable_list(const shared_ptr<sphere> object) noexcept { add(object); }
 
   void clear() { objects.clear(); }
 
-  void add(const shared_ptr<hittable> object) noexcept {
+  void add(const shared_ptr<sphere> object) noexcept {
     objects.push_back(object);
   }
   
   bool hit(const ray& r, const interval ray_t, hit_record& rec) const noexcept override {
-    hit_record temp_rec;
+    // TODO: make this configurable depending on AVX support (hard coded for now because this is for my CPU)
+    constexpr auto max_obj_count = 8;
+
+    std::array<shared_ptr<sphere>, max_obj_count> spheres;
+    std::array<hit_record, max_obj_count> recs;
+    // hit_record temp_rec;
     bool hit_anything = false;
     double closest_so_far = ray_t.max;
 
-    for (const auto& object : objects) {
-      if (object->hit(r, interval(ray_t.min, closest_so_far), temp_rec)) {
-        hit_anything = true;
-        closest_so_far = temp_rec.t;
-        rec = temp_rec;
+    for (int i = 0; i < objects.size();) {
+      int obj_count = 0;
+
+      // TODO: once support for more than `sphere` is added, gather as many as the same type as possible, call the appropriate method, then move to the next type of object
+      for (; obj_count < max_obj_count && (obj_count+i) < objects.size(); ++obj_count) {
+        spheres[obj_count] = objects[obj_count+i];
       }
+
+      const auto results = hit_spheres_avx2(spheres, r, interval(ray_t.min, closest_so_far), recs, obj_count);
+
+      for (int j = 0; j < obj_count; ++j) {
+        // multiple objects may be hit in the same test, so we can't blindly record all hits; e.g. results[4] might be farther than results[2], so don't record results[4]
+        if (results[j] && recs[j].t < closest_so_far) {
+          hit_anything = true;
+          closest_so_far = recs[j].t;
+          rec = recs[j];
+        }
+      }
+      i += obj_count;
     }
 
     return hit_anything;
