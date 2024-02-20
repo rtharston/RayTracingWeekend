@@ -1,0 +1,23 @@
+output/time_test_400_10.ppm  4.78s user 0.28s system 99% cpu 5.086 total
+- 400*225
+- 10 samples
+- 50 bounce depth
+- single thread
+
+output/time_test_400_100.ppm  46.17s user 0.49s system 98% cpu 47.561 total
+- 400*225
+- 100 samples
+- 50 bounce depth
+- single thread
+
+output/time_test_1200_10.ppm  42.48s user 2.43s system 99% cpu 45.257 total
+- 1200*675
+- 10 samples
+- 50 bounce depth
+- single thread
+
+output/time_test_1200_100.ppm  420.28s user 5.66s system 99% cpu 7:09.37 total
+- 1200*675
+- 100 samples
+- 50 bounce depth
+- single thread
