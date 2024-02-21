@@ -4,6 +4,8 @@
 #include "hittable.h"
 #include "vec3.h"
 
+#include <immintrin.h>
+
 class sphere : public hittable {
 public:
   sphere(const point3 _center, const double _radius, const std::shared_ptr<material> _mat) noexcept
@@ -50,11 +52,12 @@ public:
   const std::shared_ptr<material> mat;
 };
 
-// naive multi-hit method just to test the concept in the code that calls this.
+
 // DO NOT USE `std::bitset<4>` instead of std::array<bool, 4> it slowed my test from 25 to 32 seconds!
 std::array<bool, 4> hit_spheres_avx2(const std::shared_ptr<sphere> spheres[], const ray& r, const double a, const interval ray_t, std::array<hit_record, 4>& recs, const int sphere_count) noexcept {
   std::array<bool, 4> results;
   
+  // TODO: consider using maskload to mask off the last spheres
   if (sphere_count < 4) {
     for (int i = 0; i < sphere_count; ++i) {
       results[i] = spheres[i]->hit(r, ray_t, recs[i]);
@@ -67,23 +70,46 @@ std::array<bool, 4> hit_spheres_avx2(const std::shared_ptr<sphere> spheres[], co
   // In short, this checks if the ray hits the sphere by checking if there is
   // a point on the ray that satisfies the formula for the surface of a sphere.
   // The original formula is x^2+y^2+z^2=r^2, but it has been rearranged below.
+  
+  __m256d m_a = _mm256_set1_pd(a);
 
-  // TODO: convert the parts with doubles into AVX
+  std::array<vec3, 4> oc;
+  oc[0] = r.origin() - spheres[0]->center;
+  oc[1] = r.origin() - spheres[1]->center;
+  oc[2] = r.origin() - spheres[2]->center;
+  oc[3] = r.origin() - spheres[3]->center;
 
-  const vec3 oc = r.origin() - spheres[0]->center;
-  const double half_b = dot(oc, r.direction());
-  const double c = oc.length_squared() - spheres[0]->radius * spheres[0]->radius;
+  std::array<double, 4> half_b_arr;
+  // This aligned malloc KILLS performance - moving it to the file/global scope fixes performance, but then introduces issues for multithreading.
+  // If using std::array proves to cause issues with the alignment requirements of _mm256_load_pd I can try resolving the multithreading issues (with multiple arrays), or see if using _mm256_loadu_ps has performance issues.
+  // double* half_b_arr = (double*)aligned_alloc(32, 4 * sizeof(double));
+  // TODO: vectorize vec3 functions
+  half_b_arr[0] = dot(oc[0], r.direction());
+  half_b_arr[1] = dot(oc[1], r.direction());
+  half_b_arr[2] = dot(oc[2], r.direction());
+  half_b_arr[3] = dot(oc[3], r.direction());
+  const __m256d m_half_b = _mm256_load_pd(half_b_arr.data());
+  
+  const __m256d radius = _mm256_setr_pd(spheres[0]->radius, spheres[1]->radius, spheres[2]->radius, spheres[3]->radius);
+  const __m256d radius_sqr = _mm256_mul_pd(radius, radius);
+  // TODO: test manually putting the values in reverse order and using _mm256_set_pd instead and compare the assembly
+  // _mm256_setr_pd is used to get the order the same as the half_b values loaded from the array
+  const __m256d lengths_squared = _mm256_setr_pd(oc[0].length_squared(), oc[1].length_squared(), oc[2].length_squared(), oc[3].length_squared());
+  const __m256d c = _mm256_sub_pd(lengths_squared, radius_sqr);
+  
+  const __m256d half_b_sqr = _mm256_mul_pd(m_half_b, m_half_b);
+  const __m256d a_c = _mm256_mul_pd(m_a, c);
+  const __m256d m_discriminant = _mm256_sub_pd(half_b_sqr, a_c);
 
-  const double discriminant = half_b*half_b - a*c;
-  if (discriminant < 0)
+  if (m_discriminant[0] < 0)
     results[0] = false;
   else {
     results[0] = true;
-    const double sqrtd = sqrt(discriminant);
+    const double sqrtd = sqrt(m_discriminant[0]);
     // Find the nearest root that lies in the acceptable range.
-    double root = (-half_b - sqrtd) / a;
+    double root = (-half_b_arr[0] - sqrtd) / a;
     if (!ray_t.surrounds(root)) {
-      root = (-half_b + sqrtd) / a;
+      root = (-half_b_arr[0] + sqrtd) / a;
       if (!ray_t.surrounds(root)) {
       results[0] = false;
       }
@@ -99,20 +125,15 @@ std::array<bool, 4> hit_spheres_avx2(const std::shared_ptr<sphere> spheres[], co
   }
 
   {
-    const vec3 oc = r.origin() - spheres[1]->center;
-    const double half_b = dot(oc, r.direction());
-    const double c = oc.length_squared() - spheres[1]->radius * spheres[1]->radius;
-
-    const double discriminant = half_b*half_b - a*c;
-    if (discriminant < 0)
+    if (m_discriminant[1] < 0)
       results[1] = false;
     else {
       results[1] = true;
-      const double sqrtd = sqrt(discriminant);
+      const double sqrtd = sqrt(m_discriminant[1]);
       // Find the nearest root that lies in the acceptable range.
-      double root = (-half_b - sqrtd) / a;
+      double root = (-half_b_arr[1] - sqrtd) / a;
       if (!ray_t.surrounds(root)) {
-        root = (-half_b + sqrtd) / a;
+        root = (-half_b_arr[1] + sqrtd) / a;
         if (!ray_t.surrounds(root)) {
         results[1] = false;
         }
@@ -129,20 +150,15 @@ std::array<bool, 4> hit_spheres_avx2(const std::shared_ptr<sphere> spheres[], co
   }
 
   {
-    const vec3 oc = r.origin() - spheres[2]->center;
-    const double half_b = dot(oc, r.direction());
-    const double c = oc.length_squared() - spheres[2]->radius * spheres[2]->radius;
-
-    const double discriminant = half_b*half_b - a*c;
-    if (discriminant < 0)
+    if (m_discriminant[2] < 0)
       results[2] = false;
     else {
       results[2] = true;
-      const double sqrtd = sqrt(discriminant);
+      const double sqrtd = sqrt(m_discriminant[2]);
       // Find the nearest root that lies in the acceptable range.
-      double root = (-half_b - sqrtd) / a;
+      double root = (-half_b_arr[2] - sqrtd) / a;
       if (!ray_t.surrounds(root)) {
-        root = (-half_b + sqrtd) / a;
+        root = (-half_b_arr[2] + sqrtd) / a;
         if (!ray_t.surrounds(root)) {
         results[2] = false;
         }
@@ -159,20 +175,15 @@ std::array<bool, 4> hit_spheres_avx2(const std::shared_ptr<sphere> spheres[], co
   }
 
   {
-    const vec3 oc = r.origin() - spheres[3]->center;
-    const double half_b = dot(oc, r.direction());
-    const double c = oc.length_squared() - spheres[3]->radius * spheres[3]->radius;
-
-    const double discriminant = half_b*half_b - a*c;
-    if (discriminant < 0)
+    if (m_discriminant[3] < 0)
       results[3] = false;
     else {
       results[3] = true;
-      const double sqrtd = sqrt(discriminant);
+      const double sqrtd = sqrt(m_discriminant[3]);
       // Find the nearest root that lies in the acceptable range.
-      double root = (-half_b - sqrtd) / a;
+      double root = (-half_b_arr[3] - sqrtd) / a;
       if (!ray_t.surrounds(root)) {
-        root = (-half_b + sqrtd) / a;
+        root = (-half_b_arr[3] + sqrtd) / a;
         if (!ray_t.surrounds(root)) {
         results[3] = false;
         }

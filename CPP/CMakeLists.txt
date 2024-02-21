@@ -49,6 +49,7 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 add_compile_options(-O1)
+add_compile_options(-march=native) # enables AVX2 on my Intel machine
 
 # Executables
 add_executable(inOneWeekend      ${SOURCE_ONE_WEEKEND})
