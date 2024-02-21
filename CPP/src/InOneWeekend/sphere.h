@@ -91,15 +91,17 @@ std::array<bool, 4> hit_spheres_avx2(const std::shared_ptr<sphere> spheres[], co
   const __m256d m_half_b = _mm256_load_pd(half_b_arr.data());
   
   const __m256d radius = _mm256_setr_pd(spheres[0]->radius, spheres[1]->radius, spheres[2]->radius, spheres[3]->radius);
-  const __m256d radius_sqr = _mm256_mul_pd(radius, radius);
   // TODO: test manually putting the values in reverse order and using _mm256_set_pd instead and compare the assembly
   // _mm256_setr_pd is used to get the order the same as the half_b values loaded from the array
   const __m256d lengths_squared = _mm256_setr_pd(oc[0].length_squared(), oc[1].length_squared(), oc[2].length_squared(), oc[3].length_squared());
-  const __m256d c = _mm256_sub_pd(lengths_squared, radius_sqr);
   
-  const __m256d half_b_sqr = _mm256_mul_pd(m_half_b, m_half_b);
+  // The fnmadd negates the result of the multiply before adding the last term, which gives the same result as subtracting the result of the multiply
+  // const __m256d radius_sqr = _mm256_mul_pd(radius, radius);
+  // const __m256d c = _mm256_sub_pd(lengths_squared, radius_sqr);
+  const __m256d c = _mm256_fnmadd_pd(radius, radius, lengths_squared);
+  
   const __m256d a_c = _mm256_mul_pd(m_a, c);
-  const __m256d m_discriminant = _mm256_sub_pd(half_b_sqr, a_c);
+  const __m256d m_discriminant = _mm256_fmsub_pd(m_half_b, m_half_b, a_c);
 
   if (m_discriminant[0] < 0)
     results[0] = false;
