@@ -8,7 +8,12 @@
 
 #if defined(__AVX2__)
 #define USE_SIMD_IN_HIT
+// #define __simd_pd_t __m256d
 constexpr int simd_lane_count = 4;
+#elif defined(__ARM_NEON)
+#define USE_SIMD_IN_HIT
+// #define __simd_pd_t float64x2_t
+constexpr int simd_lane_count = 2;
 #endif
 
 constexpr double infinity = std::numeric_limits<double>::infinity();

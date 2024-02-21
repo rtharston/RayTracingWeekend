@@ -134,6 +134,42 @@ inline __m256d vec3_length_squared_avx(const __m256d& x, const __m256d& y, const
 // inline std::array<vec3,4> vec3_sub_avx(const std::array<vec3,4> &u, const std::array<vec3,4> &v) {
 //   return vec3(u.e[0] - v.e[0], u.e[1] - v.e[1], u.e[2] - v.e[2]);
 // }
+#elif defined(__ARM_NEON)
+#include <arm_neon.h>
+
+// Passing in separate point3s is faster than passing an array of point3
+inline void vec3_sub1_neon(const vec3 &u, const point3 &v_0, const point3 &v_1, float64x2_t& x, float64x2_t& y, float64x2_t& z) {
+  float64x2_t m_u_x = _mm256_set1_pd(u.e[0]);
+  float64x2_t m_u_y = _mm256_set1_pd(u.e[1]);
+  float64x2_t m_u_z = _mm256_set1_pd(u.e[2]);
+
+  // letting the compiler do this gives me a faster result then using _mm256_setr_pd; maybe it is using gather methods for me?
+  float64x2_t m_v_x = {v_0.e[0], v_1.e[0]};
+  float64x2_t m_v_y = {v_0.e[1], v_1.e[1]};
+  float64x2_t m_v_z = {v_0.e[2], v_1.e[2]};
+
+  x = m_u_x - m_v_x;
+  y = m_u_y - m_v_y;
+  z = m_u_z - m_v_z;
+}
+
+inline float64x2_t vec3_dot1_neon(const vec3 &u, const float64x2_t& x, const float64x2_t& y, const float64x2_t& z) {
+  float64x2_t m_u_x = _mm256_set1_pd(u.e[0]);
+  float64x2_t m_u_y = _mm256_set1_pd(u.e[1]);
+  float64x2_t m_u_z = _mm256_set1_pd(u.e[2]);
+
+  return m_u_x * x
+         + m_u_y * y
+         + m_u_z * z;
+}
+
+inline float64x2_t vec3_length_squared_neon(const float64x2_t& x, const float64x2_t& y, const float64x2_t& z) {
+  return x*x + y*y + z*z;
+}
+
+// inline std::array<vec3,4> vec3_sub_neon(const std::array<vec3,4> &u, const std::array<vec3,4> &v) {
+//   return vec3(u.e[0] - v.e[0], u.e[1] - v.e[1], u.e[2] - v.e[2]);
+// }
 #endif
 
 constexpr inline vec3 operator*(const vec3 &u, const vec3 &v) noexcept {

@@ -52,9 +52,13 @@ public:
 
 #if defined(__AVX2__)
 #include <immintrin.h>
+#elif defined(__ARM_NEON)
+#include <arm_neon.h>
+#endif
 
+#if defined(USE_SIMD_IN_HIT)
 // DO NOT USE `std::bitset<simd_lane_count>` instead of std::array<bool, simd_lane_count> it slowed my test from 25 to 32 seconds!
-std::array<bool, simd_lane_count> hit_spheres_avx2(const std::shared_ptr<sphere> spheres[], const ray& r, const double a, const interval ray_t, std::array<hit_record, simd_lane_count>& recs, const int sphere_count) noexcept {
+std::array<bool, simd_lane_count> hit_spheres_simd(const std::shared_ptr<sphere> spheres[], const ray& r, const double a, const interval ray_t, std::array<hit_record, simd_lane_count>& recs, const int sphere_count) noexcept {
   std::array<bool, simd_lane_count> results;
   
   // TODO: consider using maskload to mask off the last spheres
@@ -71,6 +75,7 @@ std::array<bool, simd_lane_count> hit_spheres_avx2(const std::shared_ptr<sphere>
   // a point on the ray that satisfies the formula for the surface of a sphere.
   // The original formula is x^2+y^2+z^2=r^2, but it has been rearranged below.
   
+  #if defined(__AVX2__)
   __m256d m_a = _mm256_set1_pd(a);
 
   __m256d oc_x;
@@ -92,6 +97,30 @@ std::array<bool, simd_lane_count> hit_spheres_avx2(const std::shared_ptr<sphere>
   const __m256d c = _mm256_fnmadd_pd(radius, radius, lengths_squared);
   
   const __m256d m_discriminant = _mm256_fmsub_pd(m_half_b, m_half_b, _mm256_mul_pd(m_a, c));
+  #elif defined(__ARM_NEON)
+  float64x2_t m_a = _mm256_set1_pd(a);
+
+  float64x2_t oc_x;
+  float64x2_t oc_y;
+  float64x2_t oc_z;
+  vec3_sub1_neon(r.origin(), spheres[0]->center, spheres[1]->center, spheres[2]->center, spheres[3]->center, oc_x, oc_y, oc_z);
+
+  float64x2_t m_half_b = vec3_dot1_neon(r.direction(), oc_x, oc_y, oc_z);
+  
+  // const float64x2_t lengths_squared = _mm256_setr_pd(oc[0].length_squared(), oc[1].length_squared(), oc[2].length_squared(), oc[3].length_squared());
+  float64x2_t lengths_squared = vec3_length_squared_neon(oc_x, oc_y, oc_z);
+  
+  // TODO: test manually putting the values in reverse order and using _mm256_set_pd instead and compare the assembly
+  // _mm256_setr_pd is used to get the order the same as the half_b values loaded from the array
+  const float64x2_t radius = _mm256_setr_pd(spheres[0]->radius, spheres[1]->radius, spheres[2]->radius, spheres[3]->radius);
+  // The fnmadd negates the result of the multiply before adding the last term, which gives the same result as subtracting the result of the multiply
+  // const float64x2_t radius_sqr = _mm256_mul_pd(radius, radius);
+  // const float64x2_t c = _mm256_sub_pd(lengths_squared, radius_sqr);
+  const float64x2_t c = _mm256_fnmadd_pd(radius, radius, lengths_squared);
+  
+  const float64x2_t m_discriminant = _mm256_fmsub_pd(m_half_b, m_half_b, _mm256_mul_pd(m_a, c));
+  #endif
+
 
   if (m_discriminant[0] < 0)
     results[0] = false;
@@ -141,6 +170,7 @@ std::array<bool, simd_lane_count> hit_spheres_avx2(const std::shared_ptr<sphere>
     }
   }
 
+  #if defined(__AVX2__)
   {
     if (m_discriminant[2] < 0)
       results[2] = false;
@@ -190,6 +220,7 @@ std::array<bool, simd_lane_count> hit_spheres_avx2(const std::shared_ptr<sphere>
       }
     }
   }
+  #endif
 
   return results;
 }
