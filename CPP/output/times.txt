@@ -4,11 +4,29 @@ output/time_test_400_10.ppm  4.78s user 0.28s system 99% cpu 5.086 total
 - 50 bounce depth
 - single thread
 
+output/time_test_400_10_mt.ppm  10.15s user 0.28s system 799% cpu 1.303 total
+- 400*225
+- 10 samples
+- 50 bounce depth
+- iMac 12 threads (HT)
+
 output/time_test_400_100.ppm  46.17s user 0.49s system 98% cpu 47.561 total
 - 400*225
 - 100 samples
 - 50 bounce depth
 - single thread
+
+output/time_test_400_100_mt_no_ht.ppm  73.76s user 0.47s system 557% cpu 13.315 total
+- 400*225
+- 100 samples
+- 50 bounce depth
+- iMac 6 threads (no HT)
+
+output/time_test_400_100_mt.ppm  105.07s user 0.54s system 1025% cpu 10.299 total
+- 400*225
+- 100 samples
+- 50 bounce depth
+- iMac 12 threads (HT)
 
 output/time_test_1200_10.ppm  42.48s user 2.43s system 99% cpu 45.257 total
 - 1200*675
@@ -16,8 +34,38 @@ output/time_test_1200_10.ppm  42.48s user 2.43s system 99% cpu 45.257 total
 - 50 bounce depth
 - single thread
 
+output/time_test_1200_10_mt.ppm  95.18s user 2.13s system 871% cpu 11.159 total
+- 1200*675
+- 10 samples
+- 50 bounce depth
+- iMac 12 threads (HT)
+
 output/time_test_1200_100.ppm  420.28s user 5.66s system 99% cpu 7:09.37 total
 - 1200*675
 - 100 samples
 - 50 bounce depth
 - single thread
+
+output/time_test_1200_100_mt_no_ht.ppm  655.15s user 4.48s system 576% cpu 1:54.46 total
+- 1200*675
+- 100 samples
+- 50 bounce depth
+- iMac 6 threads (no HT)
+
+output/time_test_1200_100_mt.ppm  950.21s user 4.82s system 1056% cpu 1:30.43 total
+- 1200*675
+- 100 samples
+- 50 bounce depth
+- iMac 12 threads (HT)
+
+output/time_test_1200_500_mt_no_ht.ppm  3281.28s user 12.81s system 585% cpu 9:22.58 total
+- 1200*675
+- 500 samples
+- 50 bounce depth
+- iMac 6 threads (no HT)
+
+output/time_test_1200_500_mt.ppm  4926.41s user 12.90s system 1092% cpu 7:31.93 total
+- 1200*675
+- 500 samples
+- 50 bounce depth
+- iMac 12 threads (HT)
