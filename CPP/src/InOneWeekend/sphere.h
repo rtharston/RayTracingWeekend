@@ -52,11 +52,11 @@ public:
 
 // naive multi-hit method just to test the concept in the code that calls this.
 // DO NOT USE `std::bitset<4>` instead of std::array<bool, 4> it slowed my test from 25 to 32 seconds!
-std::array<bool, 4> hit_spheres_avx2(const std::array<sphere*, 4> spheres, const ray& r, const double a, const interval ray_t, std::array<hit_record, 4>& recs, const int sphere_count) noexcept {
+std::array<bool, 4> hit_spheres_avx2(const std::shared_ptr<sphere> spheres[], const ray& r, const double a, const interval ray_t, std::array<hit_record, 4>& recs, const int sphere_count) noexcept {
   std::array<bool, 4> results;
   
   if (sphere_count < 4) {
-    for (int i = 0; i < sphere_count && i < spheres.size(); ++i) {
+    for (int i = 0; i < sphere_count; ++i) {
       results[i] = spheres[i]->hit(r, ray_t, recs[i]);
     }
 

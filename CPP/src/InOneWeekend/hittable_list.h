@@ -29,7 +29,6 @@ public:
     // TODO: make this configurable depending on AVX support (hard coded for now because this is for my CPU)
     constexpr auto max_obj_count = 4;
 
-    std::array<sphere*, max_obj_count> spheres;
     std::array<hit_record, max_obj_count> recs;
     // hit_record temp_rec;
     bool hit_anything = false;
@@ -37,14 +36,14 @@ public:
 
     for (int i = 0; i < objects.size();) {
       int obj_count = 0;
-
-      // TODO: once support for more than `sphere` is added, gather as many as the same type as possible, call the appropriate method, then move to the next type of object
-      for (; obj_count < max_obj_count && (obj_count+i) < objects.size(); ++obj_count) {
-        spheres[obj_count] = objects[obj_count+i].get();
+      if ((i + max_obj_count) < objects.size() )
+        obj_count = max_obj_count;
+      else {
+        obj_count = objects.size() - i;
       }
 
       const double a = r.direction().length_squared();
-      const auto results = hit_spheres_avx2(spheres, r, a, interval(ray_t.min, closest_so_far), recs, obj_count);
+      const auto results = hit_spheres_avx2(&objects[i], r, a, interval(ray_t.min, closest_so_far), recs, obj_count);
 
       for (int j = 0; j < obj_count; ++j) {
         // multiple objects may be hit in the same test, so we can't blindly record all hits; e.g. results[4] might be farther than results[2], so don't record results[4]
