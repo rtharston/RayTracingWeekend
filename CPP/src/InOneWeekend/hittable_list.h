@@ -26,15 +26,17 @@ public:
   }
   
   bool hit(const ray& r, const interval ray_t, hit_record& rec) const noexcept override {
-    // TODO: make this configurable depending on AVX support (hard coded for now because this is for my CPU)
-    constexpr auto max_obj_count = 4;
-
+    #if defined(USE_SIMD_IN_HIT)
+    constexpr auto max_obj_count = simd_lane_count;
     std::array<hit_record, max_obj_count> recs;
-    // hit_record temp_rec;
+    #else
+    hit_record temp_rec;
+    #endif
     bool hit_anything = false;
     double closest_so_far = ray_t.max;
 
     for (int i = 0; i < objects.size();) {
+    #if defined(USE_SIMD_IN_HIT)
       int obj_count = 0;
       if ((i + max_obj_count) < objects.size() )
         obj_count = max_obj_count;
@@ -46,7 +48,7 @@ public:
       const auto results = hit_spheres_avx2(&objects[i], r, a, interval(ray_t.min, closest_so_far), recs, obj_count);
 
       for (int j = 0; j < obj_count; ++j) {
-        // multiple objects may be hit in the same test, so we can't blindly record all hits; e.g. results[4] might be farther than results[2], so don't record results[4]
+        // multiple objects may be hit in the same test, so we can't blindly record all hits; e.g. results[3] might be farther than results[2], so don't record results[3]
         if (results[j] && recs[j].t < closest_so_far) {
           hit_anything = true;
           closest_so_far = recs[j].t;
@@ -54,6 +56,14 @@ public:
         }
       }
       i += obj_count;
+      #else
+      if (objects[i]->hit(r, interval(ray_t.min, closest_so_far), temp_rec)) {
+        hit_anything = true;
+        closest_so_far = temp_rec.t;
+        rec = temp_rec;
+      }
+      ++i;
+      #endif
     }
 
     return hit_anything;

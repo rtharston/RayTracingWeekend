@@ -4,8 +4,6 @@
 #include "hittable.h"
 #include "vec3.h"
 
-#include <immintrin.h>
-
 class sphere : public hittable {
 public:
   sphere(const point3 _center, const double _radius, const std::shared_ptr<material> _mat) noexcept
@@ -52,13 +50,15 @@ public:
   const std::shared_ptr<material> mat;
 };
 
+#if defined(__AVX2__)
+#include <immintrin.h>
 
-// DO NOT USE `std::bitset<4>` instead of std::array<bool, 4> it slowed my test from 25 to 32 seconds!
-std::array<bool, 4> hit_spheres_avx2(const std::shared_ptr<sphere> spheres[], const ray& r, const double a, const interval ray_t, std::array<hit_record, 4>& recs, const int sphere_count) noexcept {
-  std::array<bool, 4> results;
+// DO NOT USE `std::bitset<simd_lane_count>` instead of std::array<bool, simd_lane_count> it slowed my test from 25 to 32 seconds!
+std::array<bool, simd_lane_count> hit_spheres_avx2(const std::shared_ptr<sphere> spheres[], const ray& r, const double a, const interval ray_t, std::array<hit_record, simd_lane_count>& recs, const int sphere_count) noexcept {
+  std::array<bool, simd_lane_count> results;
   
   // TODO: consider using maskload to mask off the last spheres
-  if (sphere_count < 4) {
+  if (sphere_count < simd_lane_count) {
     for (int i = 0; i < sphere_count; ++i) {
       results[i] = spheres[i]->hit(r, ray_t, recs[i]);
     }
@@ -193,5 +193,6 @@ std::array<bool, 4> hit_spheres_avx2(const std::shared_ptr<sphere> spheres[], co
 
   return results;
 }
+#endif
 
 #endif // SPHERE_H

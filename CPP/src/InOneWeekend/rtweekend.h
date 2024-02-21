@@ -6,6 +6,11 @@
 
 // Constants
 
+#if defined(__AVX2__)
+#define USE_SIMD_IN_HIT
+constexpr int simd_lane_count = 4;
+#endif
+
 constexpr double infinity = std::numeric_limits<double>::infinity();
 constexpr double pi = 3.1415926535897932385;
 

@@ -5,8 +5,7 @@
 #include <iostream>
 
 #include "interval.h"
-
-#include <immintrin.h>
+#include "rtweekend.h"
 
 using std::sqrt;
 
@@ -89,6 +88,9 @@ constexpr inline vec3 operator-(const vec3 &u, const vec3 &v) noexcept {
   return vec3(u.e[0] - v.e[0], u.e[1] - v.e[1], u.e[2] - v.e[2]);
 }
 
+#if defined(__AVX2__)
+#include <immintrin.h>
+
 // Passing in separate point3s is faster than passing an array of point3
 inline void vec3_sub1_avx(const vec3 &u, const point3 &v_0, const point3 &v_1, const point3 &v_2, const point3 &v_3, __m256d& x, __m256d& y, __m256d& z) {
   __m256d m_u_x = _mm256_set1_pd(u.e[0]);
@@ -132,6 +134,7 @@ inline __m256d vec3_length_squared_avx(const __m256d& x, const __m256d& y, const
 // inline std::array<vec3,4> vec3_sub_avx(const std::array<vec3,4> &u, const std::array<vec3,4> &v) {
 //   return vec3(u.e[0] - v.e[0], u.e[1] - v.e[1], u.e[2] - v.e[2]);
 // }
+#endif
 
 constexpr inline vec3 operator*(const vec3 &u, const vec3 &v) noexcept {
   return vec3(u.e[0] * v.e[0], u.e[1] * v.e[1], u.e[2] * v.e[2]);
