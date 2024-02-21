@@ -6,6 +6,8 @@
 
 #include "interval.h"
 
+#include <immintrin.h>
+
 using std::sqrt;
 
 class vec3 {
@@ -86,6 +88,50 @@ constexpr inline vec3 operator+(const vec3 &u, const vec3 &v) noexcept {
 constexpr inline vec3 operator-(const vec3 &u, const vec3 &v) noexcept {
   return vec3(u.e[0] - v.e[0], u.e[1] - v.e[1], u.e[2] - v.e[2]);
 }
+
+// Passing in separate point3s is faster than passing an array of point3
+inline void vec3_sub1_avx(const vec3 &u, const point3 &v_0, const point3 &v_1, const point3 &v_2, const point3 &v_3, __m256d& x, __m256d& y, __m256d& z) {
+  __m256d m_u_x = _mm256_set1_pd(u.e[0]);
+  __m256d m_u_y = _mm256_set1_pd(u.e[1]);
+  __m256d m_u_z = _mm256_set1_pd(u.e[2]);
+
+  // letting the compiler do this gives me a faster result then using _mm256_setr_pd; maybe it is using gather methods for me?
+  __m256d m_v_x = {v_0.e[0], v_1.e[0], v_2.e[0], v_3.e[0]};
+  __m256d m_v_y = {v_0.e[1], v_1.e[1], v_2.e[1], v_3.e[1]};
+  __m256d m_v_z = {v_0.e[2], v_1.e[2], v_2.e[2], v_3.e[2]};
+
+  x = m_u_x - m_v_x;
+  y = m_u_y - m_v_y;
+  z = m_u_z - m_v_z;
+
+  // This is slower.
+  // __m256d x = _mm256_sub_pd(m_u_x, m_v_x);
+  // __m256d y = _mm256_sub_pd(m_u_y, m_v_y);
+  // __m256d z = _mm256_sub_pd(m_u_z, m_v_z);
+  
+  // results[0] = vec3(x[0], y[0], z[0]);
+  // results[1] = vec3(x[1], y[1], z[1]);
+  // results[2] = vec3(x[2], y[2], z[2]);
+  // results[3] = vec3(x[3], y[3], z[3]);
+}
+
+inline __m256d vec3_dot1_avx(const vec3 &u, const __m256d& x, const __m256d& y, const __m256d& z) {
+  __m256d m_u_x = _mm256_set1_pd(u.e[0]);
+  __m256d m_u_y = _mm256_set1_pd(u.e[1]);
+  __m256d m_u_z = _mm256_set1_pd(u.e[2]);
+
+  return m_u_x * x
+         + m_u_y * y
+         + m_u_z * z;
+}
+
+inline __m256d vec3_length_squared_avx(const __m256d& x, const __m256d& y, const __m256d& z) {
+  return x*x + y*y + z*z;
+}
+
+// inline std::array<vec3,4> vec3_sub_avx(const std::array<vec3,4> &u, const std::array<vec3,4> &v) {
+//   return vec3(u.e[0] - v.e[0], u.e[1] - v.e[1], u.e[2] - v.e[2]);
+// }
 
 constexpr inline vec3 operator*(const vec3 &u, const vec3 &v) noexcept {
   return vec3(u.e[0] * v.e[0], u.e[1] * v.e[1], u.e[2] * v.e[2]);

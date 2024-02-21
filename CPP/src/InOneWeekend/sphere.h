@@ -73,28 +73,19 @@ std::array<bool, 4> hit_spheres_avx2(const std::shared_ptr<sphere> spheres[], co
   
   __m256d m_a = _mm256_set1_pd(a);
 
-  std::array<vec3, 4> oc;
-  oc[0] = r.origin() - spheres[0]->center;
-  oc[1] = r.origin() - spheres[1]->center;
-  oc[2] = r.origin() - spheres[2]->center;
-  oc[3] = r.origin() - spheres[3]->center;
+  __m256d oc_x;
+  __m256d oc_y;
+  __m256d oc_z;
+  vec3_sub1_avx(r.origin(), spheres[0]->center, spheres[1]->center, spheres[2]->center, spheres[3]->center, oc_x, oc_y, oc_z);
 
-  std::array<double, 4> half_b_arr;
-  // This aligned malloc KILLS performance - moving it to the file/global scope fixes performance, but then introduces issues for multithreading.
-  // If using std::array proves to cause issues with the alignment requirements of _mm256_load_pd I can try resolving the multithreading issues (with multiple arrays), or see if using _mm256_loadu_ps has performance issues.
-  // double* half_b_arr = (double*)aligned_alloc(32, 4 * sizeof(double));
-  // TODO: vectorize vec3 functions
-  half_b_arr[0] = dot(oc[0], r.direction());
-  half_b_arr[1] = dot(oc[1], r.direction());
-  half_b_arr[2] = dot(oc[2], r.direction());
-  half_b_arr[3] = dot(oc[3], r.direction());
-  const __m256d m_half_b = _mm256_load_pd(half_b_arr.data());
+  __m256d m_half_b = vec3_dot1_avx(r.direction(), oc_x, oc_y, oc_z);
   
-  const __m256d radius = _mm256_setr_pd(spheres[0]->radius, spheres[1]->radius, spheres[2]->radius, spheres[3]->radius);
+  // const __m256d lengths_squared = _mm256_setr_pd(oc[0].length_squared(), oc[1].length_squared(), oc[2].length_squared(), oc[3].length_squared());
+  __m256d lengths_squared = vec3_length_squared_avx(oc_x, oc_y, oc_z);
+  
   // TODO: test manually putting the values in reverse order and using _mm256_set_pd instead and compare the assembly
   // _mm256_setr_pd is used to get the order the same as the half_b values loaded from the array
-  const __m256d lengths_squared = _mm256_setr_pd(oc[0].length_squared(), oc[1].length_squared(), oc[2].length_squared(), oc[3].length_squared());
-  
+  const __m256d radius = _mm256_setr_pd(spheres[0]->radius, spheres[1]->radius, spheres[2]->radius, spheres[3]->radius);
   // The fnmadd negates the result of the multiply before adding the last term, which gives the same result as subtracting the result of the multiply
   // const __m256d radius_sqr = _mm256_mul_pd(radius, radius);
   // const __m256d c = _mm256_sub_pd(lengths_squared, radius_sqr);
@@ -108,9 +99,9 @@ std::array<bool, 4> hit_spheres_avx2(const std::shared_ptr<sphere> spheres[], co
     results[0] = true;
     const double sqrtd = sqrt(m_discriminant[0]);
     // Find the nearest root that lies in the acceptable range.
-    double root = (-half_b_arr[0] - sqrtd) / a;
+    double root = (-m_half_b[0] - sqrtd) / a;
     if (!ray_t.surrounds(root)) {
-      root = (-half_b_arr[0] + sqrtd) / a;
+      root = (-m_half_b[0] + sqrtd) / a;
       if (!ray_t.surrounds(root)) {
       results[0] = false;
       }
@@ -132,9 +123,9 @@ std::array<bool, 4> hit_spheres_avx2(const std::shared_ptr<sphere> spheres[], co
       results[1] = true;
       const double sqrtd = sqrt(m_discriminant[1]);
       // Find the nearest root that lies in the acceptable range.
-      double root = (-half_b_arr[1] - sqrtd) / a;
+      double root = (-m_half_b[1] - sqrtd) / a;
       if (!ray_t.surrounds(root)) {
-        root = (-half_b_arr[1] + sqrtd) / a;
+        root = (-m_half_b[1] + sqrtd) / a;
         if (!ray_t.surrounds(root)) {
         results[1] = false;
         }
@@ -157,9 +148,9 @@ std::array<bool, 4> hit_spheres_avx2(const std::shared_ptr<sphere> spheres[], co
       results[2] = true;
       const double sqrtd = sqrt(m_discriminant[2]);
       // Find the nearest root that lies in the acceptable range.
-      double root = (-half_b_arr[2] - sqrtd) / a;
+      double root = (-m_half_b[2] - sqrtd) / a;
       if (!ray_t.surrounds(root)) {
-        root = (-half_b_arr[2] + sqrtd) / a;
+        root = (-m_half_b[2] + sqrtd) / a;
         if (!ray_t.surrounds(root)) {
         results[2] = false;
         }
@@ -182,9 +173,9 @@ std::array<bool, 4> hit_spheres_avx2(const std::shared_ptr<sphere> spheres[], co
       results[3] = true;
       const double sqrtd = sqrt(m_discriminant[3]);
       // Find the nearest root that lies in the acceptable range.
-      double root = (-half_b_arr[3] - sqrtd) / a;
+      double root = (-m_half_b[3] - sqrtd) / a;
       if (!ray_t.surrounds(root)) {
-        root = (-half_b_arr[3] + sqrtd) / a;
+        root = (-m_half_b[3] + sqrtd) / a;
         if (!ray_t.surrounds(root)) {
         results[3] = false;
         }
