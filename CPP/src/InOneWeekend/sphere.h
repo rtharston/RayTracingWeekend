@@ -100,8 +100,7 @@ std::array<bool, 4> hit_spheres_avx2(const std::shared_ptr<sphere> spheres[], co
   // const __m256d c = _mm256_sub_pd(lengths_squared, radius_sqr);
   const __m256d c = _mm256_fnmadd_pd(radius, radius, lengths_squared);
   
-  const __m256d a_c = _mm256_mul_pd(m_a, c);
-  const __m256d m_discriminant = _mm256_fmsub_pd(m_half_b, m_half_b, a_c);
+  const __m256d m_discriminant = _mm256_fmsub_pd(m_half_b, m_half_b, _mm256_mul_pd(m_a, c));
 
   if (m_discriminant[0] < 0)
     results[0] = false;
