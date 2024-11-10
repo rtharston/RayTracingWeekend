@@ -36,6 +36,7 @@ void write_color(const color pixel_color, const int x, const int y) {
   bfr[0] = static_cast<int>(255.99 * pixel_color.x());
   bfr[1] = static_cast<int>(255.99 * pixel_color.y());
   bfr[2] = static_cast<int>(255.99 * pixel_color.z());
+  bfr[3] = 255; // alpha
 }
 
 

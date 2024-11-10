@@ -11,6 +11,9 @@ set ( CMAKE_CXX_STANDARD          20 )
 set ( CMAKE_CXX_STANDARD_REQUIRED ON )
 set ( CMAKE_CXX_EXTENSIONS        OFF )
 
+# include SDL
+find_package(SDL2 REQUIRED)
+
 # Source
 
 set ( SOURCE_ONE_WEEKEND
@@ -28,7 +31,7 @@ set ( SOURCE_ONE_WEEKEND
 #   src/TheRestOfYourLife/main.cpp
 # )
 
-include_directories(src)
+include_directories(src ${SDL2_INCLUDE_DIRS})
 
 # Specific compiler flags below. We're not going to add options for all possible compilers, but if
 # you're new to CMake (like we are), the following may be a helpful example if you're using a
@@ -52,5 +55,6 @@ add_compile_options(-O1)
 
 # Executables
 add_executable(inOneWeekend      ${SOURCE_ONE_WEEKEND})
+target_link_libraries(inOneWeekend ${SDL2_LIBRARIES})
 # add_executable(theNextWeek       ${SOURCE_NEXT_WEEK})
 # add_executable(theRestOfYourLife ${SOURCE_REST_OF_YOUR_LIFE})
