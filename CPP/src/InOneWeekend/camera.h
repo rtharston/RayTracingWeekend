@@ -65,8 +65,7 @@ class camera {
       defocus_disk_v = v * defocus_radius;
     }
 
-    void render(const hittable& world, std::ostream &out) const noexcept {
-      out << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+    void render(const hittable& world) const noexcept {
       const int thread_count = std::thread::hardware_concurrency();
 
       if (thread_count) {
@@ -98,7 +97,8 @@ class camera {
           for (int t = 0; t < thread_count && j + t < image_height; ++t) {
             threads[t].join();
             for (int i = 0; i < image_width; ++i) {
-              write_color(out, thread_results[t][i]);
+              // TODO: verify i and j
+              write_color(thread_results[t][i], i, j+t);
             }
           }
           j += thread_count;
@@ -108,7 +108,7 @@ class camera {
         for (int j = 0; j < image_height; ++j) {
           std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
           for (int i = 0; i < image_width; ++i) {
-            write_color(out, render_kernel(world, j, i));
+            write_color(render_kernel(world, j, i), i, j);
           }
         }
       }
@@ -185,8 +185,10 @@ private:
   }
 
   const double aspect_ratio;
+  public:
   const int image_width;
   const int image_height;
+  private:
   const int samples_per_pixel;
   const int max_depth;   // Maximum number of ray bounces into scene
   const point3 center;   // Camera center

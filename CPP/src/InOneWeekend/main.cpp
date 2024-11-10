@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
 
+// #include "sdl2.h"
+
 #include "rtweekend.h"
 
 #include "camera.h"
@@ -8,6 +10,11 @@
 #include "hittable_list.h"
 #include "material.h"
 #include "sphere.h"
+
+uint8_t* frame_buffer;
+uint8_t bpp;
+uint32_t pitch;
+
 
 int main(int argc, char* argv[]) {
   // I tried to use a std::ostream* to choose between std::cout and file, but only cout worked for some reason
@@ -63,7 +70,17 @@ int main(int argc, char* argv[]) {
   world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
 
   const camera cam(16.0 / 9.0, 400, 10, 50, 20, point3(13,2,3), point3(0,0,0), vec3(0,1,0), 0.6, 10);
-  cam.render(world, argc == 1 ? std::cout : fout);
+  // TODO: get actual values from SDL
+  bpp = 4;
+  pitch = cam.image_width * bpp;
+  frame_buffer = (uint8_t*)malloc(bpp * cam.image_width * cam.image_height);
+  cam.render(world);
+
+  // print_to_ppm(argc == 1 ? std::cout : fout, cam.image_width, cam.image_height);
+  // save to file if a file name is given
+  if (argc > 1) {
+    print_to_ppm(fout, cam.image_width, cam.image_height);
+  }
 
   return 0;
 }
