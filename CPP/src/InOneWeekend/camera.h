@@ -10,6 +10,9 @@
 #include <iosfwd>
 #include <thread>
 
+// TODO: use something that can control separate threads so I can stop the render without stopping the preview
+extern std::atomic_bool stop_render;
+
 class camera {
   public:
     // This was constexpr until I had to include tan...
@@ -98,6 +101,11 @@ class camera {
             }
           }
           j += thread_count;
+
+          if (stop_render) {
+            std::clog << "\rRender canceled.       \n";
+            return;
+          }
         }
       } else {
         // If the cpu count wasn't found for some reason, perform the original single threaded algorithm

@@ -15,6 +15,7 @@ uint8_t* frame_buffer;
 uint8_t bpp;
 uint32_t pitch;
 
+std::atomic_bool stop_render = false;
 
 int main(int argc, char* argv[]) {
   // I tried to use a std::ostream* to choose between std::cout and file, but only cout worked for some reason
@@ -26,6 +27,9 @@ int main(int argc, char* argv[]) {
       return -1;
     }
   }
+
+  int preview_samples_per_pixel = 1;
+  int preview_max_depth = 5;
 
   int samples_per_pixel = 10;
   int max_depth = 50;
@@ -110,19 +114,26 @@ int main(int argc, char* argv[]) {
   pitch = cam.image_width * bpp;
   // frame_buffer = (uint8_t*)malloc(bpp * cam.image_width * cam.image_height);
   frame_buffer = (Uint8 *)surface->pixels;
+  // const int buffer_size = bpp * cam.image_width * cam.image_height;
 
-  // Render a whole line per thread to get better utilization out of each thread.
-  auto render_world = [&cam, &world, samples_per_pixel, max_depth]() {
-    cam.render(world, 1, max_depth / 10);
-    if (samples_per_pixel > 1) {
-      cam.render(world, samples_per_pixel, max_depth);
-    }
+  // Render first pass preview
+  const auto render_preview = [&cam, &world, preview_samples_per_pixel, preview_max_depth]() {
+    cam.render(world, preview_samples_per_pixel, preview_max_depth);
   };
 
-  const auto render_thread = std::thread(render_world);
+  const auto preview_thread = std::thread(render_preview);
+  // bool preview_running = true;
+  
+  const auto render_world = [&cam, &world, samples_per_pixel, max_depth]() {
+    cam.render(world, samples_per_pixel, max_depth);
+  };
+
+  std::thread render_thread;
+  bool render_running = false;
 
 	SDL_Event event;
   bool quit = false;
+  bool start_render = false;
   while (!quit) {
       while (SDL_PollEvent(&event) != 0) {
           switch (event.type) {
@@ -131,9 +142,43 @@ int main(int argc, char* argv[]) {
                 quit = true;
                 break;
               }
+              case SDL_KEYUP:
+                // TODO: add a pause/continue so I can't accidentally stop and have to start all the way over again
+                // TODO: add ability to run another batch of X samples to add to the existing samples, to continue to improve quality
+                if (event.key.keysym.sym == SDLK_s) {
+                  std::cout << "s pressed" << std::endl;
+                  if (render_running) {
+                    stop_render = true;
+                  } else {
+                    start_render = true;
+                  }
+                }
+                break;
               default:
                 break;
           }
+      }
+
+      if (stop_render) {
+        std::cout << "stop pre join" << std::endl;
+        render_thread.join();
+        std::cout << "stop post join" << std::endl;
+        stop_render = false;
+        render_running = false;
+      }
+
+      // if (clear_screen)
+      //   // clear the screen before starting new render
+      //   std::memset(frame_buffer, 0, buffer_size);
+      // }
+
+      // TODO: add ability to change parameters before starting the full render (and do a quick refresh each time)
+      if (start_render) {
+        std::cout << "start pre thread" << std::endl;
+        render_thread = std::thread(render_world);
+        std::cout << "start post thread" << std::endl;
+        render_running = true;
+        start_render = false;
       }
 
 	    SDL_UpdateWindowSurface(window);
