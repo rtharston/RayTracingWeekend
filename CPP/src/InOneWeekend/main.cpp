@@ -17,7 +17,13 @@ uint32_t pitch;
 
 std::atomic_bool stop_render = false;
 
+static time_t time_world_generated;
+static struct tm localtime_world_generated;
+
 void generate_world(hittable_list &world) {
+  // Get the time the world was generated, so the preview and render have the same timestamp
+  time_world_generated = std::time(nullptr);
+  localtime_world_generated = *std::localtime(&time_world_generated);
   world.clear();
   world.objects.reserve(22 * 22);
   static const auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
@@ -59,16 +65,7 @@ void generate_world(hittable_list &world) {
 }
 
 int main(int argc, char* argv[]) {
-  // I tried to use a std::ostream* to choose between std::cout and file, but only cout worked for some reason
-  std::ofstream fout;
-  if (argc > 2) {
-    // I create the file here to fail on errors before wasting time rendering an image I can't save
-    fout = std::ofstream{argv[1]};
-    if (!fout) {
-      return -1;
-    }
-  }
-
+  // TODO: get these from a config file, and add abililty to hot load them while running
   int preview_samples_per_pixel = 1;
   int preview_max_depth = 5;
 
@@ -122,13 +119,16 @@ int main(int argc, char* argv[]) {
     cam.render(world, preview_samples_per_pixel, preview_max_depth);
   };
 
+  generate_world(world);
   std::thread preview_thread = std::thread(render_preview);
   
   bool render_running = false;
-  const auto render_world = [&cam, &world, &render_running, samples_per_pixel, max_depth]() {
+  bool render_complete = false;
+  const auto render_world = [&cam, &world, &render_running, &render_complete, samples_per_pixel, max_depth]() {
     render_running = true;
     cam.render(world, samples_per_pixel, max_depth);
     render_running = false;
+    render_complete = true;
   };
 
   std::thread render_thread;
@@ -152,12 +152,12 @@ int main(int argc, char* argv[]) {
                     render_thread.join();
                     stop_render = false;
                   } else {
-                    // TODO: add ability to change parameters before starting the full render (and do a quick refresh each time)
                     render_thread = std::thread(render_world);
                   }
                 } else if (event.key.keysym.sym == SDLK_g) { // generate a new world
                   // only allow regenerating the world when the render isn't running
                   if (!render_running) {
+                    render_complete = false;
                     // stop the previous preview before starting a new one (even if it is done, we need to join to avoid a crash when starting a new thread)
                     stop_render = true;
                     preview_thread.join();
@@ -166,7 +166,24 @@ int main(int argc, char* argv[]) {
                     generate_world(world);
                     preview_thread = std::thread(render_preview);
                   }
+                } else if (event.key.keysym.sym == SDLK_w) { // save the image
+                  std::ostringstream filename;
+                  filename << "image_" << cam.image_width << "_" << cam.image_height << "_s" << samples_per_pixel << "_d" << max_depth << "_" << std::put_time(&localtime_world_generated, "%d-%m-%Y_%H-%M-%S");
+                  if (!render_complete) {
+                    filename << "_preview";
+                  }
+                  filename << ".ppm";
+                  std::ofstream fout{filename.str()};
+                  if (fout) {
+                    // render_thread.join();
+                    std::cout << "Saving file to: " << filename.str() << std::endl;
+                    print_to_ppm(fout, cam.image_width, cam.image_height);
+                    std::cout << "Save complete." << std::endl;
+                  } else {
+                    std::cerr << "ERROR: failed to open file to save image." << std::endl;
+                  }
                 }
+                // TODO: add ability to adjust the depth and samples per pixel (1, 10, percentage) and print the new value on each change
                 // if (clear_screen)
                 //   // clear the screen before starting new render
                 //   std::memset(frame_buffer, 0, buffer_size);
@@ -185,14 +202,6 @@ int main(int argc, char* argv[]) {
 
 	SDL_DestroyWindow(window);
 	SDL_Quit();
-
-  // TODO: do this properly in the background as soon as the render is done, and show some sort of output to indicate progress
-  // print_to_ppm(argc == 1 ? std::cout : fout, cam.image_width, cam.image_height);
-  // save to file if a file name is given
-  if (argc > 2) {
-    // render_thread.join();
-    print_to_ppm(fout, cam.image_width, cam.image_height);
-  }
 
   return 0;
 }
