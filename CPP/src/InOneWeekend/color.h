@@ -39,8 +39,19 @@ void write_color(const color pixel_color, const int x, const int y) {
   bfr[3] = 255; // alpha
 }
 
+void print_to_ppm(std::ofstream &out, const int image_width, const int image_height) {
+  out << "P6\n" << image_width << ' ' << image_height << "\n255\n";
 
-void print_to_ppm(std::ostream &out, const int image_width, const int image_height) {
+  uint8_t* bfr = frame_buffer;
+  for (int y = 0; y < image_height; ++y) {
+    for (int x = 0; x < image_width; ++x) {
+      bfr += bpp;
+      out << bfr[0] << bfr[1] << bfr[2];
+    }
+  }
+}
+
+void print_to_ppm_text(std::ostream &out, const int image_width, const int image_height) {
   out << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
   uint8_t* bfr = frame_buffer;
