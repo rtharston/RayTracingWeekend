@@ -16,7 +16,6 @@ class camera {
     /* constexpr */ camera(
       const double _aspect_ratio,
       const int _image_width,
-      const int _max_depth,
       const double _vfov,
       const point3 lookfrom,
       const point3 lookat,
@@ -27,7 +26,6 @@ class camera {
     : aspect_ratio(_aspect_ratio),
       image_width(_image_width),
       image_height(static_cast<int>(image_width / aspect_ratio)),
-      max_depth(_max_depth),
       center(lookfrom),
       vfov(_vfov),
       defocus_angle(_defocus_angle)
@@ -63,7 +61,7 @@ class camera {
       defocus_disk_v = v * defocus_radius;
     }
 
-    void render(const hittable& world, const int samples_per_pixel) const noexcept {
+    void render(const hittable& world, const int samples_per_pixel, const int max_depth) const noexcept {
       const int thread_count = std::thread::hardware_concurrency();
 
       if (thread_count) {
@@ -77,9 +75,9 @@ class camera {
           thread_results[t].reserve(image_width);
 
         // Render a whole line per thread to get better utilization out of each thread.
-        auto render_line = [this, &world, &thread_results, samples_per_pixel](int j, int thread_id) {
+        auto render_line = [this, &world, &thread_results, samples_per_pixel, max_depth](int j, int thread_id) {
           for (int i = 0; i < image_width; ++i) {
-            thread_results[thread_id][i] = render_kernel(world, j, i, samples_per_pixel);
+            thread_results[thread_id][i] = render_kernel(world, j, i, samples_per_pixel, max_depth);
           }
         };
 
@@ -106,7 +104,7 @@ class camera {
         for (int j = 0; j < image_height; ++j) {
           std::clog << "\rScanlines remaining: " << (image_height - j) << ' ' << std::flush;
           for (int i = 0; i < image_width; ++i) {
-            write_color(render_kernel(world, j, i, samples_per_pixel), i, j);
+            write_color(render_kernel(world, j, i, samples_per_pixel, max_depth), i, j);
           }
         }
       }
@@ -118,7 +116,7 @@ class camera {
 private:
   
   // TODO: make it possible to run this again with more samples and add to the existing samples instead of starting over
-  color render_kernel(const hittable& world, const int j, const int i, const int samples_per_pixel) const noexcept {
+  color render_kernel(const hittable& world, const int j, const int i, const int samples_per_pixel, const int max_depth) const noexcept {
     color pixel_color(0,0,0);
     for (int sample = 0; sample < samples_per_pixel; ++sample) {
       const ray r = get_ray(i, j);
@@ -188,7 +186,6 @@ private:
   const int image_width;
   const int image_height;
   private:
-  const int max_depth;   // Maximum number of ray bounces into scene
   const point3 center;   // Camera center
   const double vfov;     // Vertical view angle (field of view)
   const double defocus_angle; // TODO: consider making this optional

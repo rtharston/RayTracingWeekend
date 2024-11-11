@@ -28,6 +28,7 @@ int main(int argc, char* argv[]) {
   }
 
   int samples_per_pixel = 10;
+  int max_depth = 50;
   if (argc > 1) {
     samples_per_pixel = atoi(argv[1]);
   }
@@ -74,7 +75,7 @@ int main(int argc, char* argv[]) {
   auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
   world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
 
-  const camera cam(16.0 / 10.0, 2560, 50, 20, point3(13,2,3), point3(0,0,0), vec3(0,1,0), 0.6, 10);
+  const camera cam(16.0 / 10.0, 2560, 20, point3(13,2,3), point3(0,0,0), vec3(0,1,0), 0.6, 10);
 
 	SDL_Init(SDL_INIT_VIDEO);
 
@@ -111,10 +112,10 @@ int main(int argc, char* argv[]) {
   frame_buffer = (Uint8 *)surface->pixels;
 
   // Render a whole line per thread to get better utilization out of each thread.
-  auto render_world = [&cam, &world, samples_per_pixel]() {
-    cam.render(world, 1);
+  auto render_world = [&cam, &world, samples_per_pixel, max_depth]() {
+    cam.render(world, 1, max_depth / 10);
     if (samples_per_pixel > 1) {
-      cam.render(world, samples_per_pixel);
+      cam.render(world, samples_per_pixel, max_depth);
     }
   };
 
