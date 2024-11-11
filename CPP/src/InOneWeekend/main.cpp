@@ -122,9 +122,11 @@ int main(int argc, char* argv[]) {
   generate_world(world);
   std::thread preview_thread = std::thread(render_preview);
   
+  bool render_started = false;
   bool render_running = false;
   bool render_complete = false;
-  const auto render_world = [&cam, &world, &render_running, &render_complete, samples_per_pixel, max_depth]() {
+  const auto render_world = [&cam, &world, &render_started, &render_running, &render_complete, samples_per_pixel, max_depth]() {
+    render_started = true;
     render_running = true;
     cam.render(world, samples_per_pixel, max_depth);
     render_running = false;
@@ -152,6 +154,9 @@ int main(int argc, char* argv[]) {
                     render_thread.join();
                     stop_render = false;
                   } else {
+                    if (render_started) {
+                      render_thread.join();
+                    }
                     render_thread = std::thread(render_world);
                   }
                 } else if (event.key.keysym.sym == SDLK_g) { // generate a new world
