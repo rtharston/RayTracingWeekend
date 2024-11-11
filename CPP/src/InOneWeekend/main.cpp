@@ -104,21 +104,45 @@ int main(int argc, char* argv[]) {
   pitch = cam.image_width * bpp;
   // frame_buffer = (uint8_t*)malloc(bpp * cam.image_width * cam.image_height);
   frame_buffer = (Uint8 *)surface->pixels;
-  cam.render(world);
-	SDL_UpdateWindowSurface(window);
 
-  // print_to_ppm(argc == 1 ? std::cout : fout, cam.image_width, cam.image_height);
-  // save to file if a file name is given
-  if (argc > 1) {
-    print_to_ppm(fout, cam.image_width, cam.image_height);
+  // Render a whole line per thread to get better utilization out of each thread.
+  auto render_world = [&cam, &world]() {
+    cam.render(world);
+  };
+
+  const auto render_thread = std::thread(render_world);
+
+	SDL_Event event;
+  bool quit = false;
+  while (!quit) {
+      while (SDL_PollEvent(&event) != 0) {
+          switch (event.type) {
+              case SDL_QUIT:
+              {
+                quit = true;
+                break;
+              }
+              default:
+                break;
+          }
+      }
+
+	    SDL_UpdateWindowSurface(window);
+
+      // about 60 fps
+      SDL_Delay(17);
   }
-
-	SDL_Event e;
-	while (SDL_WaitEvent(&e) && e.type != SDL_QUIT);
 
 	SDL_DestroyWindow(window);
 	SDL_Quit();
-  
+
+  // TODO: do this properly in the background as soon as the render is done, and show some sort of output to indicate progress
+  // print_to_ppm(argc == 1 ? std::cout : fout, cam.image_width, cam.image_height);
+  // save to file if a file name is given
+  if (argc > 2) {
+    // render_thread.join();
+    print_to_ppm(fout, cam.image_width, cam.image_height);
+  }
 
   return 0;
 }
