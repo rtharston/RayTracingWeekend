@@ -43,10 +43,10 @@ void write_color(const color pixel_color, const int x, const int y) {
 void print_to_ppm(std::ostream &out, const int image_width, const int image_height) {
   out << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
+  uint8_t* bfr = frame_buffer;
   for (int y = 0; y < image_height; ++y) {
     for (int x = 0; x < image_width; ++x) {
-
-      uint8_t* bfr = frame_buffer + y * pitch + x * bpp;
+      bfr += bpp;
 
       out << static_cast<int>(bfr[0]) << ' '
           << static_cast<int>(bfr[1]) << ' '
