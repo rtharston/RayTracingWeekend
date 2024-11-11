@@ -17,30 +17,10 @@ uint32_t pitch;
 
 std::atomic_bool stop_render = false;
 
-int main(int argc, char* argv[]) {
-  // I tried to use a std::ostream* to choose between std::cout and file, but only cout worked for some reason
-  std::ofstream fout;
-  if (argc > 2) {
-    // I create the file here to fail on errors before wasting time rendering an image I can't save
-    fout = std::ofstream{argv[1]};
-    if (!fout) {
-      return -1;
-    }
-  }
-
-  int preview_samples_per_pixel = 1;
-  int preview_max_depth = 5;
-
-  int samples_per_pixel = 10;
-  int max_depth = 50;
-  if (argc > 1) {
-    samples_per_pixel = atoi(argv[1]);
-  }
-
-  hittable_list world;
+void generate_world(hittable_list &world) {
+  world.clear();
   world.objects.reserve(22 * 22);
-
-  const auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
+  static const auto ground_material = make_shared<lambertian>(color(0.5, 0.5, 0.5));
   world.add(make_shared<sphere>(point3(0,-1000,0), 1000, ground_material));
 
   const auto glass_material = make_shared<dielectric>(1.5);
@@ -68,14 +48,37 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  const auto material1 = make_shared<dielectric>(1.5);
+  static const auto material1 = make_shared<dielectric>(1.5);
   world.add(make_shared<sphere>(point3(0, 1, 0), 1.0, material1));
 
-  const auto material2 = make_shared<lambertian>(color(0.4, 0.2, 0.1));
+  static const auto material2 = make_shared<lambertian>(color(0.4, 0.2, 0.1));
   world.add(make_shared<sphere>(point3(-4, 1, 0), 1.0, material2));
 
-  const auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
+  static const auto material3 = make_shared<metal>(color(0.7, 0.6, 0.5), 0.0);
   world.add(make_shared<sphere>(point3(4, 1, 0), 1.0, material3));
+}
+
+int main(int argc, char* argv[]) {
+  // I tried to use a std::ostream* to choose between std::cout and file, but only cout worked for some reason
+  std::ofstream fout;
+  if (argc > 2) {
+    // I create the file here to fail on errors before wasting time rendering an image I can't save
+    fout = std::ofstream{argv[1]};
+    if (!fout) {
+      return -1;
+    }
+  }
+
+  int preview_samples_per_pixel = 1;
+  int preview_max_depth = 5;
+
+  int samples_per_pixel = 10;
+  int max_depth = 50;
+  if (argc > 1) {
+    samples_per_pixel = atoi(argv[1]);
+  }
+
+  hittable_list world;
 
   const camera cam(16.0 / 10.0, 2560, 20, point3(13,2,3), point3(0,0,0), vec3(0,1,0), 0.6, 10);
 
@@ -119,8 +122,7 @@ int main(int argc, char* argv[]) {
     cam.render(world, preview_samples_per_pixel, preview_max_depth);
   };
 
-  const auto preview_thread = std::thread(render_preview);
-  // bool preview_running = true;
+  std::thread preview_thread = std::thread(render_preview);
   
   bool render_running = false;
   const auto render_world = [&cam, &world, &render_running, samples_per_pixel, max_depth]() {
@@ -152,6 +154,17 @@ int main(int argc, char* argv[]) {
                   } else {
                     // TODO: add ability to change parameters before starting the full render (and do a quick refresh each time)
                     render_thread = std::thread(render_world);
+                  }
+                } else if (event.key.keysym.sym == SDLK_g) { // generate a new world
+                  // only allow regenerating the world when the render isn't running
+                  if (!render_running) {
+                    // stop the previous preview before starting a new one (even if it is done, we need to join to avoid a crash when starting a new thread)
+                    stop_render = true;
+                    preview_thread.join();
+                    stop_render = false;
+
+                    generate_world(world);
+                    preview_thread = std::thread(render_preview);
                   }
                 }
                 // if (clear_screen)
