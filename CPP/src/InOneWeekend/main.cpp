@@ -122,16 +122,17 @@ int main(int argc, char* argv[]) {
   const auto preview_thread = std::thread(render_preview);
   // bool preview_running = true;
   
-  const auto render_world = [&cam, &world, samples_per_pixel, max_depth]() {
+  bool render_running = false;
+  const auto render_world = [&cam, &world, &render_running, samples_per_pixel, max_depth]() {
+    render_running = true;
     cam.render(world, samples_per_pixel, max_depth);
+    render_running = false;
   };
 
   std::thread render_thread;
-  bool render_running = false;
 
 	SDL_Event event;
   bool quit = false;
-  bool start_render = false;
   while (!quit) {
       while (SDL_PollEvent(&event) != 0) {
           switch (event.type) {
@@ -144,39 +145,23 @@ int main(int argc, char* argv[]) {
                 // TODO: add a pause/continue so I can't accidentally stop and have to start all the way over again
                 // TODO: add ability to run another batch of X samples to add to the existing samples, to continue to improve quality
                 if (event.key.keysym.sym == SDLK_s) {
-                  std::cout << "s pressed" << std::endl;
                   if (render_running) {
                     stop_render = true;
+                    render_thread.join();
+                    stop_render = false;
                   } else {
-                    start_render = true;
+                    // TODO: add ability to change parameters before starting the full render (and do a quick refresh each time)
+                    render_thread = std::thread(render_world);
                   }
                 }
+                // if (clear_screen)
+                //   // clear the screen before starting new render
+                //   std::memset(frame_buffer, 0, buffer_size);
+                // }
                 break;
               default:
                 break;
           }
-      }
-
-      if (stop_render) {
-        std::cout << "stop pre join" << std::endl;
-        render_thread.join();
-        std::cout << "stop post join" << std::endl;
-        stop_render = false;
-        render_running = false;
-      }
-
-      // if (clear_screen)
-      //   // clear the screen before starting new render
-      //   std::memset(frame_buffer, 0, buffer_size);
-      // }
-
-      // TODO: add ability to change parameters before starting the full render (and do a quick refresh each time)
-      if (start_render) {
-        std::cout << "start pre thread" << std::endl;
-        render_thread = std::thread(render_world);
-        std::cout << "start post thread" << std::endl;
-        render_running = true;
-        start_render = false;
       }
 
 	    SDL_UpdateWindowSurface(window);
