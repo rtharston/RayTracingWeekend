@@ -20,6 +20,16 @@ std::atomic_bool stop_render = false;
 static time_t time_world_generated;
 static struct tm localtime_world_generated;
 
+struct WorkItem {
+  enum class ExtraJob {
+    none, generate_new_world, save_image
+  };
+
+  const int samples_per_pixel;
+  const int max_depth;
+  const ExtraJob extra;
+};
+
 void generate_world(hittable_list &world) {
   // Get the time the world was generated, so the preview and render have the same timestamp
   time_world_generated = std::time(nullptr);
@@ -77,7 +87,7 @@ int main(int argc, char* argv[]) {
 
   hittable_list world;
 
-  const camera cam(16.0 / 10.0, 2560, 20, point3(13,2,3), point3(0,0,0), vec3(0,1,0), 0.6, 10);
+  const camera cam(16.0 / 10.0, 1280, 20, point3(13,2,3), point3(0,0,0), vec3(0,1,0), 0.6, 10);
 
 	SDL_Init(SDL_INIT_VIDEO);
 
@@ -114,25 +124,60 @@ int main(int argc, char* argv[]) {
   frame_buffer = (Uint8 *)surface->pixels;
   // const int buffer_size = bpp * cam.image_width * cam.image_height;
 
+  // TODO: add proper locking around accesses to this vector
+  std::queue<WorkItem> render_work;
+
   // Render first pass preview
-  const auto render_preview = [&cam, &world, preview_samples_per_pixel, preview_max_depth]() {
-    cam.render(world, preview_samples_per_pixel, preview_max_depth);
-  };
-
-  generate_world(world);
+  render_work.emplace(preview_samples_per_pixel, preview_max_depth, WorkItem::ExtraJob::generate_new_world);
   
-  bool render_started = false;
   bool render_running = false;
-  bool render_complete = false;
-  const auto render_world = [&cam, &world, &render_started, &render_running, &render_complete, samples_per_pixel, max_depth]() {
-    render_started = true;
-    render_running = true;
-    cam.render(world, samples_per_pixel, max_depth);
-    render_running = false;
-    render_complete = true;
+  int samples_per_pixel_complete = 0;
+  const auto render_world = [&cam, &world, &render_running, &render_work, &samples_per_pixel_complete]() {
+    using namespace std::chrono_literals;
+    while (true) {
+      while (!render_work.empty()) {
+        // std::cout << "Got a job" << std::endl;
+        // std::cout << "job size in pool work loop: " << render_work.size() << std::endl;
+        const auto job = render_work.front();
+        render_work.pop();
+        if (job.extra == WorkItem::ExtraJob::generate_new_world) {
+          generate_world(world);
+          samples_per_pixel_complete = 0;
+        }
+
+        if (job.extra == WorkItem::ExtraJob::save_image) {
+          std::ostringstream filename;
+          filename << "image_" << cam.image_width << "_" << cam.image_height << "_s" << samples_per_pixel_complete << "_d" << job.max_depth << "_" << std::put_time(&localtime_world_generated, "%d-%m-%Y_%H-%M-%S") << ".ppm";
+          std::ofstream fout{filename.str()};
+          if (fout) {
+            // render_thread.join();
+            std::cout << "Saving file to: " << filename.str() << std::endl;
+            print_to_ppm(fout, cam.image_width, cam.image_height);
+            std::cout << "Save complete." << std::endl;
+          } else {
+            std::cerr << "ERROR: failed to open file to save image." << std::endl;
+          }
+        } else {
+          render_running = true;
+          stop_render = false; // in case it was stopped
+          cam.render(world, job.samples_per_pixel, job.max_depth);
+          render_running = false;
+          stop_render = false; // in case it was stopped
+          samples_per_pixel_complete += job.samples_per_pixel;
+        }
+      }
+
+      // TODO: make this a proper pool and don't spin wait
+      while (render_work.empty()) {
+        // std::cout << "Waiting..." << std::endl;
+        std::this_thread::sleep_for(200ms);
+        // std::cout << "job size in wait: " << render_work.size() << std::endl;
+      }
+      // std::cout << "Out of wait" << std::endl;
+    }
   };
 
-  std::thread render_thread = std::thread(render_preview);
+  std::thread render_thread = std::thread(render_world);
 
 	SDL_Event event;
   bool quit = false;
@@ -147,45 +192,19 @@ int main(int argc, char* argv[]) {
               case SDL_KEYUP:
                 // TODO: add a pause/continue so I can't accidentally stop and have to start all the way over again
                 // TODO: add ability to run another batch of X samples to add to the existing samples, to continue to improve quality
-                if (event.key.keysym.sym == SDLK_s) {
-                  if (render_running) {
-                    stop_render = true;
-                    render_thread.join();
-                    stop_render = false;
-                  } else {
-                    // TODO: fix this with a work pool for the thread to pull from
-                    // Wait for preview to finish
-                    render_thread.join();
-                    render_thread = std::thread(render_world);
+                if (event.key.keysym.sym == SDLK_t) {
+                  stop_render = true;
+                  while (!render_work.empty()) {
+                    render_work.pop();
                   }
+                } else if (event.key.keysym.sym == SDLK_s) {
+                  render_work.emplace(samples_per_pixel, max_depth, WorkItem::ExtraJob::none);
                 } else if (event.key.keysym.sym == SDLK_g) { // generate a new world
-                  // only allow regenerating the world when the render isn't running
-                  if (!render_running) {
-                    render_complete = false;
-                    // stop the previous preview before starting a new one (even if it is done, we need to join to avoid a crash when starting a new thread)
-                    stop_render = true;
-                    render_thread.join();
-                    stop_render = false;
-
-                    generate_world(world);
-                    render_thread = std::thread(render_preview);
-                  }
+                  // std::cout << "job size: " << render_work.size() << std::endl;
+                  render_work.emplace(preview_samples_per_pixel, preview_max_depth, WorkItem::ExtraJob::generate_new_world);
+                  // std::cout << "job size: " << render_work.size() << std::endl;
                 } else if (event.key.keysym.sym == SDLK_w) { // save the image
-                  std::ostringstream filename;
-                  filename << "image_" << cam.image_width << "_" << cam.image_height << "_s" << samples_per_pixel << "_d" << max_depth << "_" << std::put_time(&localtime_world_generated, "%d-%m-%Y_%H-%M-%S");
-                  if (!render_complete) {
-                    filename << "_preview";
-                  }
-                  filename << ".ppm";
-                  std::ofstream fout{filename.str()};
-                  if (fout) {
-                    // render_thread.join();
-                    std::cout << "Saving file to: " << filename.str() << std::endl;
-                    print_to_ppm(fout, cam.image_width, cam.image_height);
-                    std::cout << "Save complete." << std::endl;
-                  } else {
-                    std::cerr << "ERROR: failed to open file to save image." << std::endl;
-                  }
+                  render_work.emplace(preview_samples_per_pixel, preview_max_depth, WorkItem::ExtraJob::save_image);
                 }
                 // TODO: add ability to adjust the depth and samples per pixel (1, 10, percentage) and print the new value on each change
                 // if (clear_screen)
