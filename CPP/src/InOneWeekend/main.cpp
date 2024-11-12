@@ -120,7 +120,6 @@ int main(int argc, char* argv[]) {
   };
 
   generate_world(world);
-  std::thread preview_thread = std::thread(render_preview);
   
   bool render_started = false;
   bool render_running = false;
@@ -133,7 +132,7 @@ int main(int argc, char* argv[]) {
     render_complete = true;
   };
 
-  std::thread render_thread;
+  std::thread render_thread = std::thread(render_preview);
 
 	SDL_Event event;
   bool quit = false;
@@ -154,9 +153,9 @@ int main(int argc, char* argv[]) {
                     render_thread.join();
                     stop_render = false;
                   } else {
-                    if (render_started) {
-                      render_thread.join();
-                    }
+                    // TODO: fix this with a work pool for the thread to pull from
+                    // Wait for preview to finish
+                    render_thread.join();
                     render_thread = std::thread(render_world);
                   }
                 } else if (event.key.keysym.sym == SDLK_g) { // generate a new world
@@ -165,11 +164,11 @@ int main(int argc, char* argv[]) {
                     render_complete = false;
                     // stop the previous preview before starting a new one (even if it is done, we need to join to avoid a crash when starting a new thread)
                     stop_render = true;
-                    preview_thread.join();
+                    render_thread.join();
                     stop_render = false;
 
                     generate_world(world);
-                    preview_thread = std::thread(render_preview);
+                    render_thread = std::thread(render_preview);
                   }
                 } else if (event.key.keysym.sym == SDLK_w) { // save the image
                   std::ostringstream filename;
