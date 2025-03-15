@@ -1,4 +1,6 @@
 const std = @import("std");
+const Vec3 = @import("Vec3.zig");
+const ppm = @import("ppm.zig");
 
 pub fn main() !void {
     const stdout_file = std.io.getStdOut().writer();
@@ -14,11 +16,11 @@ pub fn main() !void {
     for (0..image_height) |j| {
         std.debug.print("\rScanlines remaining: {} ", .{image_height - j});
         for (0..image_width) |i| {
-            const r: u8 = @intFromFloat(255.99 * @as(f64, @floatFromInt(i)) / (image_width - 1));
-            const g: u8 = @intFromFloat(255.99 * @as(f64, @floatFromInt(j)) / (image_width - 1));
-            const b: u8 = @intFromFloat(255.99 * 0.0);
-
-            try stdout.print("{} {} {}\n", .{ r, g, b });
+            try ppm.writeColor(stdout, .{
+                .x = @as(f64, @floatFromInt(i)) / (image_width - 1),
+                .y = @as(f64, @floatFromInt(j)) / (image_width - 1),
+                .z = 0.0,
+            });
         }
     }
 
