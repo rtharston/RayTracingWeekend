@@ -48,6 +48,12 @@ pub fn mult(self: @This(), other: anytype) @This() {
             .y = self.y * other,
             .z = self.z * other,
         };
+    } else if (@TypeOf(other) == i32 or @TypeOf(other) == i64 or @TypeOf(other) == comptime_int or @TypeOf(other) == usize) {
+        return .{
+            .x = self.x * @as(f64, @floatFromInt(other)),
+            .y = self.y * @as(f64, @floatFromInt(other)),
+            .z = self.z * @as(f64, @floatFromInt(other)),
+        };
     } else if (@TypeOf(other) == @This()) {
         return .{
             .x = self.x * other.x,
@@ -61,7 +67,7 @@ pub fn mult(self: @This(), other: anytype) @This() {
 
 // TODO: consider adding second version that assigns to self
 pub fn divide(self: @This(), other: f64) @This() {
-    return mult(self, other / 1);
+    return mult(self, 1 / other);
 }
 
 pub fn length(self: @This()) f64 {
@@ -84,6 +90,10 @@ pub fn cross(self: @This(), other: @This()) @This() {
     };
 }
 
+pub fn unit_vector(v: @This()) @This() {
+    return v.divide(v.length());
+}
+
 pub fn eql(self: @This(), other: @This()) bool {
     return self.x == other.x and self.y == other.y and self.z == other.z;
 }
@@ -100,4 +110,18 @@ test "mult" {
     try expect(v1.mult(v2).eql(@This().init(0.5, 0.0, 0.0)));
 
     try expect(v1.mult(0.5).eql(@This().init(0.5, 0.0, 1.0)));
+}
+
+test "length" {
+    const v1 = @This().init(1.0, 0.0, 0.0);
+    try expect(v1.length() == 1.0);
+    const v2 = @This().init(1.0, 1.0, 0.0);
+    try expect(v2.length() == std.math.sqrt(2.0));
+}
+
+test "unit_vector" {
+    const v1 = @This().init(1.0, 0.0, 0.0);
+    try expect(v1.unit_vector().eql(v1));
+    const v2 = @This().init(std.math.sqrt(2.0), std.math.sqrt(2.0), 0.0);
+    try expect(v2.unit_vector().eql(@This().init(std.math.sqrt(2.0) / 2.0, std.math.sqrt(2.0) / 2.0, 0.0)));
 }
