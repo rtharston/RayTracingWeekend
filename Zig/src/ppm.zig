@@ -8,6 +8,7 @@ pub const ColorU8 = struct {
     const red: ColorU8 = .{ 255, 0, 0 };
     const green: ColorU8 = .{ 0, 255, 0 };
     const blue: ColorU8 = .{ 0, 0, 255 };
+    const white: ColorU8 = .{ 255, 255, 255 };
 
     pub fn init(r: u8, g: u8, b: u8) ColorU8 {
         return ColorU8{
