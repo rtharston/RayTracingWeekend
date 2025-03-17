@@ -11,9 +11,20 @@ fn rayColor(r: Ray) ppm.Color {
 }
 
 pub fn main() !void {
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    var general_purpose_allocator: std.heap.GeneralPurposeAllocator(.{}) = .init;
+    const gpa = general_purpose_allocator.allocator();
+    const args = try std.process.argsAlloc(gpa);
+    defer std.process.argsFree(gpa, args);
+
+    var writer: std.io.AnyWriter = undefined;
+    if (args.len > 1) {
+        const file = try std.fs.Dir.createFile(std.fs.cwd(), args[1], .{});
+        writer = file.writer().any();
+    } else {
+        writer = std.io.getStdOut().writer().any();
+    }
+    var bw = std.io.bufferedWriter(writer);
+    const any_writer = bw.writer().any();
 
     // Image
     const image_width = 640;
@@ -39,14 +50,14 @@ pub fn main() !void {
     const viewport_upper_left = camera_center.sub(Vec3.init(0.0, 0.0, focal_length)).sub(viewport_u.divide(2)).sub(viewport_v.divide(2));
     const pixel00_loc = viewport_upper_left.add((pixel_delta_u.add(pixel_delta_v).mult(0.5)));
 
-    try stdout.print("P3\n{} {}\n255\n", .{ image_width, image_height });
+    try any_writer.print("P3\n{} {}\n255\n", .{ image_width, image_height });
 
     for (0..image_height) |j| {
         std.debug.print("\rScanlines remaining: {} ", .{image_height - j});
         for (0..image_width) |i| {
             const pixel_center = pixel00_loc.add(pixel_delta_u.mult(i)).add(pixel_delta_v.mult(j));
             const ray_dir = pixel_center.sub(camera_center);
-            try ppm.writeColor(stdout, rayColor(Ray.init(camera_center, ray_dir)));
+            try ppm.writeColor(any_writer, rayColor(Ray.init(camera_center, ray_dir)));
         }
     }
 

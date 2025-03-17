@@ -1,3 +1,4 @@
+const std = @import("std");
 pub const Color = @import("Vec3.zig");
 
 pub const ColorU8 = struct {
@@ -27,6 +28,6 @@ pub const ColorU8 = struct {
     }
 };
 
-pub fn writeColor(writer: anytype, color: Color) !void {
+pub fn writeColor(writer: std.io.AnyWriter, color: Color) !void {
     try writer.print("{} {} {}\n", ColorU8.fromColor(color));
 }
